@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Produtos</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <a href="/">← Voltar à Página Inicial</a>
+
+  <% if (produtos) { %>
+    <!-- Lista de produtos por categoria -->
+    <h2>Produtos</h2>
+    <ul class="lista-produtos">
+      <% produtos.forEach(prod => { %>
+        <li>
+          <a href="/produtos?id=<%= prod.id %>">
+            <div class="produto-img">
+              <img src="/images/<%= prod.imagem %>" alt="<%= prod.nome %>" width="100">
+            </div>
+            <h4><%= prod.nome %></h4>
+            <p>Categoria: <%= prod.categoria %></p>
+          </a>
+        </li>
+      <% }) %>
+    </ul>
+
+  <% } else if (produto) { %>
+    <!-- Detalhes de um único produto -->
+    <div class="produto-detalhe">
+      <div class="galeria">
+        <img id="imagem-principal" src="/images/<%= images[0].filename %>" alt="Imagem principal">
+        <div class="thumbnails">
+          <% images.forEach(img => { %>
+            <img class="thumb" src="/images/<%= img.filename %>" onclick="document.getElementById('imagem-principal').src=this.src;">
+          <% }) %>
+        </div>
+      </div>
+      <div class="info">
+        <h2><%= produto.nome %></h2>
+        <p><%= produto.descricao %></p>
+        <p>Preço: R$ <%= produto.preco.toFixed(2) %></p>
+        <p>Em estoque: <%= produto.quantidade %></p>
+        <form action="/adicionar" method="post">
+          <input type="hidden" name="id_produto" value="<%= produto.id %>">
+          <label>Quantidade:</label>
+          <input type="number" name="quantidade" value="1" min="1" max="<%= produto.quantidade %>">
+          <button type="submit">Adicionar ao Carrinho</button>
+        </form>
+      </div>
+    </div>
+  <% } %>
+</body>
+</html>

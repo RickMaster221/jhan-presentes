@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Admin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h2>Administração de Produtos</h2>
+
+  <% if (sucesso) { %>
+    <p style="color:green;"><%= sucesso %></p>
+  <% } %>
+
+  <form action="/admin" method="post" enctype="multipart/form-data">
+    <label>Nome do Produto:</label>
+    <input type="text" name="nome" required><br>
+
+    <label>Descrição:</label>
+    <textarea name="descricao"></textarea><br>
+
+    <label>Preço (R$):</label>
+    <input type="number" step="0.01" name="preco" required><br>
+
+    <label>Quantidade:</label>
+    <input type="number" name="quantidade" required><br>
+
+    <label>Idade mínima recomendada:</label>
+    <input type="number" name="idade_min" min="0" required><br>
+
+    <label>Idade máxima recomendada:</label>
+    <input type="number" name="idade_max" min="0" required><br>
+
+    <label>Categorias (separe por vírgula):</label>
+    <input type="text" name="categorias" placeholder="Ex: Brinquedos, Educativos, Meninos"><br>
+
+    <label>Imagens:</label>
+    <input type="file" name="imagens" multiple accept="image/*"><br>
+
+    <button type="submit">Cadastrar Produto</button>
+  </form>
+
+  <hr>
+
+  <h3>Produtos Cadastrados</h3>
+
+  <% if (produtos && produtos.length > 0) { %>
+    <table border="1" cellpadding="8">
+      <thead>
+        <tr>
+          <th>Imagem</th>
+          <th>Nome</th>
+          <th>Categorias</th>
+          <th>Faixa Etária</th>
+          <th>Preço</th>
+          <th>Quantidade</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% produtos.forEach(produto => { %>
+          <tr>
+            <td>
+              <% if (produto.imagem_principal) { %>
+                <img src="/images/<%= produto.imagem_principal %>" width="60">
+              <% } else { %>
+                Sem imagem
+              <% } %>
+            </td>
+            <td><%= produto.nome %></td>
+            <td>
+              <% if (Array.isArray(produto.categorias)) { %>
+                <%= produto.categorias.join(', ') %>
+              <% } else { %>
+                <%= produto.categorias %>
+              <% } %>
+            </td>
+            <td><%= produto.idade_min %> a <%= produto.idade_max %> anos</td>
+            <td>R$ <%= parseFloat(produto.preco).toFixed(2) %></td>
+            <td><%= produto.quantidade %></td>
+            <td>
+              <a href="/editar-produto/<%= produto.id %>">Editar</a> |
+              <form action="/excluir-produto/<%= produto.id %>" method="post" style="display:inline;" onsubmit="return confirm('Tem certeza que deseja excluir este produto?');">
+                <button type="submit">Excluir</button>
+              </form>
+            </td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  <% } else { %>
+    <p>Nenhum produto cadastrado.</p>
+  <% } %>
+</body>
+</html>

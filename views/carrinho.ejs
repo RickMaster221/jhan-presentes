@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Carrinho</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <h2>Carrinho de Compras</h2>
+
+  <% if (itens && itens.length > 0) { %>
+    <ul class="carrinho-lista">
+      <% itens.forEach(item => { %>
+        <li>
+          <img src="/images/<%= item.imagem %>" width="100">
+          <strong><%= item.nome %></strong> (Quantidade: <%= item.quantidade %>) - Subtotal: R$ <%= item.subtotal.toFixed(2) %>
+          <a href="/remover/<%= item.id %>" class="btn-remover">Remover</a>
+        </li>
+      <% }) %>
+    </ul>
+    <p>Total: R$ <%= total.toFixed(2) %></p>
+
+    <a href="/produtos" class="btn-continuar">Continuar Comprando</a>
+
+    <!-- Formulário para finalizar compra -->
+    <form action="/checkout" method="post" style="display:inline;">
+      <button type="submit" class="btn-finalizar">Finalizar Compra</button>
+    </form>
+
+  <% } else { %>
+    <p>Seu carrinho está vazio.</p>
+    <a href="/produtos" class="btn-continuar">Escolher Produtos</a>
+  <% } %>
+</body>
+</html>

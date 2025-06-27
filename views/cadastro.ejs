@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Cadastro</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h2>Cadastro</h2>
+
+  <% if (error && error.length > 0) { %>
+    <p style="color:red;"><%= error %></p>
+  <% } %>
+
+  <form action="/cadastro" method="post">
+    <label>Nome:</label>
+    <input type="text" name="nome" required><br>
+
+    <label>Email:</label>
+    <input type="email" name="email" required><br>
+
+    <label>Senha:</label>
+    <input type="password" name="senha" required><br>
+
+    <button type="submit">Cadastrar</button>
+  </form>
+</body>
+</html>
+

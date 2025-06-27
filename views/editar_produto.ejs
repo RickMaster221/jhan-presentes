@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Editar Produto</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <h2>Editar Produto</h2>
+  <form method="POST" enctype="multipart/form-data">
+    <label>Nome:</label>
+    <input type="text" name="nome" value="<%= produto.nome %>" required><br>
+
+    <label>Descrição:</label>
+    <textarea name="descricao"><%= produto.descricao %></textarea><br>
+
+    <label>Preço:</label>
+    <input type="number" name="preco" value="<%= produto.preco %>" step="0.01" required><br>
+
+    <label>Quantidade:</label>
+    <input type="number" name="quantidade" value="<%= produto.quantidade %>" required><br>
+
+    <label>Categorias:</label><br>
+    <select name="categorias" multiple size="4" required>
+      <% todasCategorias.forEach(function(categoria) { %>
+        <option value="<%= categoria %>" 
+          <%= produto.categorias.includes(categoria) ? 'selected' : '' %>>
+          <%= categoria %>
+        </option>
+      <% }) %>
+    </select><br>
+
+    <label>Idade Mínima:</label>
+    <input type="number" name="idade_minima" value="<%= produto.idade_minima || '' %>" min="0"><br>
+
+    <label>Idade Máxima:</label>
+    <input type="number" name="idade_maxima" value="<%= produto.idade_maxima || '' %>" min="0"><br>
+
+    <label>Imagens:</label>
+    <input type="file" name="imagens" multiple accept="image/*"><br>
+
+    <button type="submit">Salvar Alterações</button>
+  </form>
+  <br>
+  <a href="/admin">← Voltar</a>
+</body>
+</html>

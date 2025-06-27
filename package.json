@@ -1,0 +1,24 @@
+{
+  "name": "jhan_presentes",
+  "version": "1.0.0",
+  "description": "Loja virtual Jhan Presentes em Node.js",
+  "main": "app.js",
+  "scripts": {
+    "start": "node app.js",
+    "dev": "nodemon app.js"
+  },
+  "keywords": ["loja", "express", "mercado pago", "ejs"],
+  "author": "Seu Nome",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "ejs": "^3.1.9",
+    "express": "^4.19.2",
+    "express-session": "^1.17.4",
+    "mercadopago": "^1.5.16",
+    "sqlite3": "^5.1.6"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.0"
+  }
+}
