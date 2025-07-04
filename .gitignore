@@ -1,0 +1,5 @@
+# Ignore arquivos sensíveis e de credenciais
+serviceAccountKey.json
+*.env
+produtos-ml.json
+node_modules/

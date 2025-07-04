@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Jhan Presentes</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+</head>
+<body>
+
+    <header class="top-bar">
+        <div class="logo">
+            <img src="images/logo.jpeg" alt="Logo Jhan Presentes">
+        </div>
+        <div class="search-bar">
+            <form>
+                <input type="text" name="busca" placeholder="Buscar produtos...">
+                <button type="submit">🔍</button>
+            </form>
+        </div>
+
+    </header>
+
+    <nav class="categoria-bar">
+        <span>Categorias:</span>
+        <a href="produtos.html?categoria=masculino" class="categoria-btn">Brinquedos Masculinos</a>
+        <a href="produtos.html?categoria=feminino" class="categoria-btn">Brinquedos Femininos</a>
+    </nav>
+
+    <main class="conteudo-principal">
+        <h2>Bem-vindo à nossa loja!</h2>
+        <p>Escolha uma categoria acima para começar.</p>
+    </main>
+
+</body>
+</html>

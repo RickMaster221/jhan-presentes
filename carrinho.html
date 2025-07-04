@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Carrinho</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <h2>Carrinho de Compras</h2>
+  {% if itens %}
+    <ul class="carrinho-lista">
+      {% for item in itens %}
+        <li>
+          <img src="{{ url_for('static', filename='images/' ~ item['imagem']) }}" width="100">
+          <strong>{{ item['nome'] }}</strong> (Quantidade: {{ item['quantidade'] }}) - Subtotal: R$ {{ '%.2f'|format(item['subtotal']) }}
+          <a href="{{ url_for('remover', prod_id=item['id']) }}" class="btn-remover">Remover</a>
+        </li>
+      {% endfor %}
+    </ul>
+    <p>Total: R$ {{ '%.2f'|format(total) }}</p>
+    <a href="{{ url_for('produtos') }}" class="btn-continuar">Continuar Comprando</a>
+
+    <!-- Formulário para finalizar compra enviando POST para /checkout -->
+    <form action="{{ url_for('checkout') }}" method="post" style="display:inline;">
+      <button type="submit" class="btn-finalizar">Finalizar Compra</button>
+    </form>
+
+  {% else %}
+    <p>Seu carrinho está vazio.</p>
+    <a href="{{ url_for('produtos') }}" class="btn-continuar">Escolher Produtos</a>
+  {% endif %}
+</body>
+</html>

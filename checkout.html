@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Finalizar Pagamento - Jhan Presentes</title>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <h2>Finalizar Compra — Jhan Presentes</h2>
+
+  {% if preference_id %}
+    <div class="resumo">
+      <h3>Resumo da Compra</h3>
+      <ul>
+        {% for item in itens %}
+          <li>{{ item.nome }} (x{{ item.quantidade }}) — R$ {{ '%.2f'|format(item.subtotal) }}</li>
+        {% endfor %}
+      </ul>
+      <p class="total">Total: R$ {{ '%.2f'|format(total) }}</p>
+      <a href="{{ url_for('carrinho') }}" class="btn-voltar">← Voltar para o carrinho</a>
+    </div>
+
+    <div id="paymentBrick_container"></div>
+    <div id="paymentStatus_container"></div>
+
+    <script>
+      const mp = new MercadoPago('{{ public_key }}', { locale: 'pt-BR' });
+      const bricks = mp.bricks();
+
+      async function renderPaymentBrick() {
+        const settings = {
+          initialization: {
+            preferenceId: '{{ preference_id }}'
+          },
+          customization: {
+            visual: { style: { theme: 'light' } },
+            paymentMethods: {
+              creditCard: 'all',
+              debitCard: 'all',
+              ticket: 'all',
+              bankTransfer: 'all',
+              mercadoPago: 'all',
+              maxInstallments: 12
+            }
+          },
+          callbacks: {
+            onReady: () => {
+              console.log("Brick carregado com sucesso");
+            },
+            onSubmit: async ({ formData }) => {
+              const result = await bricks.paymentController.createPayment({ formData });
+              await bricks.create('status', 'paymentStatus_container', {
+                paymentResult: result
+              });
+            },
+            onError: err => console.error("Erro no pagamento:", err)
+          }
+        };
+
+        await bricks.create('payment', 'paymentBrick_container', settings);
+      }
+
+      renderPaymentBrick();
+    </script>
+
+  {% else %}
+    <p id="error-message">Erro: não foi possível carregar os dados do pagamento. Tente novamente mais tarde.</p>
+    <a href="{{ url_for('carrinho') }}" class="btn-voltar">← Voltar para o carrinho</a>
+  {% endif %}
+</body>
+</html>

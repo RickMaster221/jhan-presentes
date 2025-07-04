@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin - Jhan Presentes</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body class="login-body">
+    <div class="admin-container">
+        <h1>Administração de Produtos</h1>
+
+        <form id="product-form">
+            <div class="form-row">
+                <label for="name">Nome do Produto:</label>
+                <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-row">
+                <label for="description">Descrição:</label>
+                <textarea id="description" name="description" required></textarea>
+            </div>
+            <div class="form-row">
+                <label for="categories">Categorias (separadas por vírgula):</label>
+                <input type="text" id="categories" name="categories">
+            </div>
+            <div class="form-row">
+                <label for="price">Preço (R$):</label>
+                <input type="number" id="price" name="price" step="0.01" required>
+            </div>
+            <div class="form-row">
+                <label for="images">Imagens (URL, separadas por vírgula):</label>
+                <input type="text" id="images" name="images">
+            </div>
+            <button type="submit" class="btn-submit">Cadastrar Produto</button>
+        </form>
+        
+        <div id="feedback-message"></div>
+        <hr>
+
+        <h2>Produtos Cadastrados</h2>
+        <table class="product-table">
+            <thead>
+                <tr>
+                    <th>Imagem</th>
+                    <th>Nome</th>
+                    <th>Categorias</th>
+                    <th>Preço</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="product-list-body">
+                </tbody>
+        </table>
+    </div>
+
+    <script src="js/database.js"></script>
+    <script src="js/admin.js"></script>
+    <script>
+        // Seu script de segurança do Firebase continua aqui...
+        const adminConfig = {
+            apiKey: "AIzaSyAZ2yG95fgUzcQdjgKXxr7dYG1xtPxnZhA",
+            authDomain: "jhan-presentes.firebaseapp.com",
+            projectId: "jhan-presents"
+        };
+        const ADMIN_EMAIL = "ricardopiresdecarvalhojunior@gmail.com"; // Lembre-se de usar seu email real
+
+        if (!firebase.apps.length) {
+           firebase.initializeApp(adminConfig);
+        }
+
+        firebase.auth().onAuthStateChanged(user => {
+            if (!user || user.email !== ADMIN_EMAIL) {
+                alert("Acesso negado. Você precisa ser um administrador para ver esta página.");
+                window.location.href = 'index.html';
+            }
+        });
+    </script>
+</body>
+</html>

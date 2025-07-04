@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <h2>Escolha o método de pagamento</h2>
+  <form method="post">
+    <button type="submit" name="metodo" value="cartao">Pagar com Cartão</button>
+    <button type="submit" name="metodo" value="pix">Pagar com Pix</button>
+    <button type="submit" name="metodo" value="boleto">Gerar Boleto</button>
+  </form>
+</body>
+</html>
+
+<!-- checkout.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento Seguro</title>
+  <script src="https://sdk.mercadopago.com/js/v2"></script>
+</head>
+<body>
+  <h2>Finalize seu pagamento</h2>
+  <div id="wallet-container"></div>
+  <script>
+    const mp = new MercadoPago("{{ public_key }}", { locale: "pt-BR" });
+    mp.bricks().create("wallet", "wallet-container", {
+      initialization: {
+        preferenceId: "{{ preference_id }}"
+      },
+      customization: {
+        visual: {
+          style: {
+            theme: "default"
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
+
+<!-- pagamento_concluido.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento Concluído</title>
+</head>
+<body>
+  <h2>Pagamento Aprovado!</h2>
+  <p>Obrigado por sua compra. Seu pedido está sendo processado.</p>
+  <a href="{{ url_for('index') }}">Voltar para a loja</a>
+</body>
+</html>
+
+<!-- pagamento_pendente.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento Pendente</title>
+</head>
+<body>
+  <h2>Pagamento Pendente</h2>
+  <p>Aguarde a confirmação do seu pagamento. Entraremos em contato assim que for aprovado.</p>
+  <a href="{{ url_for('index') }}">Voltar para a loja</a>
+</body>
+</html>
+
+<!-- pagamento_falhou.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <title>Pagamento Falhou</title>
+</head>
+<body>
+  <h2>Pagamento Não Concluído</h2>
+  <p>Houve um problema com seu pagamento. Tente novamente ou escolha outro método.</p>
+  <a href="{{ url_for('pagamento') }}">Voltar para pagamento</a>
+</body>
+</html>
