@@ -7,6 +7,19 @@
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+      var firebaseConfig = {
+        apiKey: "AIzaSyAZ2yG95fgUzcQdjgkXxr7dYG1xtPxnZhA",
+        authDomain: "jhan-presentes.firebaseapp.com",
+        projectId: "jhan-presentes"
+      };
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+    </script>
+    <script src="js/database.js"></script>
+    <script src="js/busca.js"></script>
 </head>
 <body>
 
@@ -24,9 +37,8 @@
     </header>
 
     <nav class="categoria-bar">
-        <span>Categorias:</span>
-        <a href="produtos.html?categoria=masculino" class="categoria-btn">Brinquedos Masculinos</a>
-        <a href="produtos.html?categoria=feminino" class="categoria-btn">Brinquedos Femininos</a>
+        <button id="btn-categorias" class="categoria-btn" type="button">Categorias</button>
+        <div id="lista-categorias" style="display:none; position:absolute; z-index:10; background:#fff; border:1px solid #ccc; border-radius:8px; box-shadow:0 2px 8px #0002; padding:15px; margin-top:10px;"></div>
     </nav>
 
     <main class="conteudo-principal">
@@ -34,5 +46,7 @@
         <p>Escolha uma categoria acima para começar.</p>
     </main>
 
+    <div id="busca-resultados"></div>
+    <script src="js/categorias.js"></script>
 </body>
 </html>

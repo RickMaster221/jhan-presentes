@@ -5,19 +5,18 @@ const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// NÃO COLOQUE SUAS CREDENCIAIS NEM TOKENS NESTE SCRIPT PARA SUBIR NO GITHUB!
-// Removido o require do serviceAccountKey.json para evitar vazamento de credenciais.
-// Para rodar localmente, restaure a linha abaixo e coloque o arquivo serviceAccountKey.json no .gitignore.
-// const serviceAccount = require('./serviceAccountKey.json');
+// Caminho do arquivo de credenciais do Firebase (baixe do console do Firebase)
+const serviceAccount = require('./serviceAccountKey.json');
 
-// admin.initializeApp({
-//   credential: admin.credential.cert(serviceAccount)
-// });
+// Inicializa o Firebase Admin
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount)
+});
 
-// const db = admin.firestore();
+const db = admin.firestore();
 
 // Lê o arquivo de produtos
-// const produtos = JSON.parse(fs.readFileSync(path.join(__dirname, 'produtos-ml.json'), 'utf8'));
+const produtos = JSON.parse(fs.readFileSync(path.join(__dirname, 'produtos-ml.json'), 'utf8'));
 
 async function importarProdutos() {
   for (const produto of produtos) {
@@ -37,4 +36,4 @@ async function importarProdutos() {
   console.log('Importação finalizada!');
 }
 
-// importarProdutos();
+importarProdutos();

@@ -259,11 +259,10 @@ hr {
 /* Container da Grade de Produtos */
 .produtos-grid {
     display: grid;
-    /* Cria 5 colunas de tamanho igual */
-    grid-template-columns: repeat(5, 1fr); 
-    /* Define o espaçamento entre os cards */
-    gap: 25px; 
+    grid-template-columns: repeat(5, 1fr); /* 5 colunas */
+    gap: 25px;
     padding: 20px;
+    justify-items: center;
 }
 
 /* Estilo do Card Individual do Produto */
@@ -275,6 +274,12 @@ hr {
     background-color: #ffffff;
     box-shadow: 0 2px 5px rgba(0,0,0,0.05);
     transition: transform 0.2s, box-shadow 0.2s;
+    width: 200px;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
 }
 
 /* Efeito de "levantar" o card ao passar o mouse */
@@ -284,34 +289,44 @@ hr {
 }
 
 .produto-card img {
-    max-width: 100%;
-    height: 180px; /* Altura fixa para alinhar as imagens */
-    object-fit: contain; /* Garante que a imagem caiba sem distorcer */
-    margin-bottom: 15px;
+    max-width: 120px;
+    max-height: 120px;
+    object-fit: contain;
+    margin-bottom: 10px;
+    border-radius: 4px;
 }
 
 .produto-card h2 {
     font-size: 1.1em;
-    color: #333;
-    margin: 10px 0;
+    color: #4B0082;
+    margin: 10px 0 5px 0;
+    font-weight: bold;
+    text-align: center;
+    text-decoration: underline;
 }
 
 .produto-card p {
-    font-size: 0.9em;
-    color: #777;
-    margin-bottom: 15px;
+    font-size: 0.95em;
+    color: #555;
+    margin-bottom: 10px;
 }
 
 .produto-card span {
-    font-size: 1.3em;
+    font-size: 1.1em;
     font-weight: bold;
     color: #28a745;
 }
 
-.produto-card .btn-submit {
-    margin-top: 15px;
+.produto-card .btn-submit, .produto-card button {
+    margin-top: 10px;
     width: 100%;
-    background-color: #007bff;
+    background-color: #8a2be2;
+    color: #fff;
+    border: none;
+    padding: 8px 0;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1em;
 }
 
 /* --- Responsividade para Telas Menores --- */

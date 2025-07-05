@@ -3,11 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <title>Nossos Produtos</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script>
+      var firebaseConfig = {
+        apiKey: "AIzaSyAZ2yG95fgUzcQdjgKXxr7dYG1xtPxnZhA",
+        authDomain: "jhan-presentes.firebaseapp.com",
+        projectId: "jhan-presentes"
+      };
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+    </script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     </head>
 <body>
     <h1>Nossos Produtos</h1>
-    
+    <a href="index.html"><h2>Voltar ao Início</h2></a>
     <div id="product-list" class="produtos-grid">
         </div>
 
