@@ -352,3 +352,45 @@ hr {
         grid-template-columns: 1fr; /* Apenas 1 coluna */
     }
 }
+
+.status-container {
+    background-color: white;
+    padding: 40px 50px;
+    margin: 60px auto;
+    max-width: 600px;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.status-container .icon {
+    font-size: 4em; /* Tamanho grande para o ícone */
+    margin-bottom: 20px;
+}
+
+.status-container h1 {
+    color: #333;
+    font-size: 2em;
+    margin-bottom: 15px;
+}
+
+.status-container p {
+    color: #555;
+    font-size: 1.1em;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.status-container .btn-voltar {
+    text-decoration: none;
+    color: white;
+    background-color: #8a2be2; /* Roxo principal do site */
+    padding: 12px 25px;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: background-color 0.2s;
+}
+
+.status-container .btn-voltar:hover {
+    background-color: #6a1eae;
+}
