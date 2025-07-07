@@ -1,33 +1,47 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <title>Carrinho</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <meta charset="UTF-8">
+    <title>Carrinho de Compras - Jhan Presentes</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script>
+      var firebaseConfig = {
+        apiKey: "AIzaSyAZ2yG95fgUzcQdjgkXxr7dYG1xtPxnZhA",
+        authDomain: "jhan-presentes.firebaseapp.com",
+        projectId: "jhan-presentes"
+      };
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
 </head>
 <body>
-  <h2>Carrinho de Compras</h2>
-  {% if itens %}
-    <ul class="carrinho-lista">
-      {% for item in itens %}
-        <li>
-          <img src="{{ url_for('static', filename='images/' ~ item['imagem']) }}" width="100">
-          <strong>{{ item['nome'] }}</strong> (Quantidade: {{ item['quantidade'] }}) - Subtotal: R$ {{ '%.2f'|format(item['subtotal']) }}
-          <a href="{{ url_for('remover', prod_id=item['id']) }}" class="btn-remover">Remover</a>
-        </li>
-      {% endfor %}
-    </ul>
-    <p>Total: R$ {{ '%.2f'|format(total) }}</p>
-    <a href="{{ url_for('produtos') }}" class="btn-continuar">Continuar Comprando</a>
 
-    <!-- Formulário para finalizar compra enviando POST para /checkout -->
-    <form action="{{ url_for('checkout') }}" method="post" style="display:inline;">
-      <button type="submit" class="btn-finalizar">Finalizar Compra</button>
-    </form>
+    <header class="top-bar">
+        <div class="logo">
+             <a href="index.html"><img src="images/logo.jpeg" alt="Logo Jhan Presentes"></a>
+        </div>
+    </header>
+    
+    <main class="admin-container">
+        <h1>Meu Carrinho de Compras</h1>
+        
+        <div id="carrinho-container">
+            </div>
 
-  {% else %}
-    <p>Seu carrinho está vazio.</p>
-    <a href="{{ url_for('produtos') }}" class="btn-continuar">Escolher Produtos</a>
-  {% endif %}
+        <div id="carrinho-total" style="text-align: right; font-size: 1.5em; margin-top: 20px;">
+            </div>
+
+        <div id="carrinho-acoes" style="text-align: right; margin-top: 20px;">
+            <a href="produtos.html" class="categoria-btn" style="background-color: #6c757d;">Continuar Comprando</a>
+            <button class="btn-submit" style="background-color: #28a745;">Finalizar Compra</button>
+        </div>
+    </main>
+
+    <script src="js/database.js"></script>
+    <script src="js/carrinho.js"></script>
 </body>
 </html>
