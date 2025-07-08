@@ -1,32 +1,32 @@
-// Script para importar produtos do arquivo produtos-ml.json para o Firestore do Firebase
-// Uso: node import-to-firebase.js
-
+// import-to-firebase.js (Corrigido para incluir estoque)
 const admin = require('firebase-admin');
 const fs = require('fs');
 const path = require('path');
 
-// Caminho do arquivo de credenciais do Firebase (baixe do console do Firebase)
 const serviceAccount = require('./serviceAccountKey.json');
 
-// Inicializa o Firebase Admin
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount)
 });
 
 const db = admin.firestore();
-
-// Lê o arquivo de produtos
 const produtos = JSON.parse(fs.readFileSync(path.join(__dirname, 'produtos-ml.json'), 'utf8'));
 
 async function importarProdutos() {
+  const produtosCollection = db.collection('produtos');
+  console.log('Iniciando importação para o Firestore...');
+
   for (const produto of produtos) {
     try {
-      await db.collection('produtos').add({
+      // Cria uma referência para um novo documento com um ID gerado automaticamente
+      const docRef = produtosCollection.doc(); 
+      await docRef.set({
         nome: produto.name,
         descricao: produto.description,
         categorias: produto.categories,
         preco: produto.price,
-        imagens: produto.images
+        imagens: produto.images,
+        estoque: produto.estoque || 0 // <-- CAMPO DE ESTOQUE ADICIONADO
       });
       console.log(`Produto importado: ${produto.name}`);
     } catch (e) {

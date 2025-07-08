@@ -16,7 +16,7 @@ function getConfig() {
         return JSON.parse(configFile);
     } catch (e) {
         console.error("Erro: Não foi possível ler o arquivo 'config.json'. Certifique-se de que ele existe e está no formato JSON correto.");
-        process.exit(1); // Encerra o script se não houver configuração
+        process.exit(1);
     }
 }
 
@@ -43,7 +43,6 @@ function fetchJSON(url, options = {}) {
                 try {
                     const jsonData = JSON.parse(data);
                     if (jsonData.error) {
-                        // Passa o objeto de erro completo para tratamento posterior
                         return reject({ statusCode: res.statusCode, error: jsonData });
                     }
                     resolve(jsonData);
@@ -88,14 +87,12 @@ async function refreshAccessToken() {
                     if (newTokenData.error) {
                        return reject(new Error(newTokenData.error_description || 'Erro ao renovar token.'));
                     }
-
-                    // Atualiza a configuração com os novos tokens
                     config.ML_ACCESS_TOKEN = newTokenData.access_token;
-                    config.ML_REFRESH_TOKEN = newTokenData.refresh_token; // O ML também envia um novo refresh_token
+                    config.ML_REFRESH_TOKEN = newTokenData.refresh_token;
                     saveConfig(config);
                     
                     console.log("✅ Token do Mercado Livre renovado e salvo com sucesso!");
-                    resolve(config.ML_ACCESS_TOKEN); // Retorna o novo token de acesso
+                    resolve(config.ML_ACCESS_TOKEN);
                 } catch(e) { reject(e); }
              });
         });
@@ -112,7 +109,6 @@ async function main() {
     let config = getConfig();
     let accessToken = config.ML_ACCESS_TOKEN;
 
-    // 1. Obter o ID do usuário, com tentativa de renovação de token
     console.log('Verificando token e buscando ID do Vendedor...');
     let userId;
     try {
@@ -120,15 +116,13 @@ async function main() {
         const userMeData = await fetchJSON(userMeUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
         userId = userMeData.id;
     } catch (err) {
-        // Se o erro for 401 (Unauthorized), tenta renovar o token
         if (err.statusCode === 401) {
             accessToken = await refreshAccessToken();
-            // Tenta buscar o ID do usuário novamente com o novo token
             const userMeUrl = 'https://api.mercadolibre.com/users/me';
             const userMeData = await fetchJSON(userMeUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
             userId = userMeData.id;
         } else {
-            throw err; // Lança outros erros
+            throw err;
         }
     }
 
@@ -138,7 +132,6 @@ async function main() {
     }
     console.log(`ID do Vendedor encontrado: ${userId}`);
 
-    // 2. Buscar todos os anúncios com paginação
     console.log('Buscando todos os anúncios ativos (com paginação)...');
     const allItemIds = [];
     let offset = 0;
@@ -162,7 +155,6 @@ async function main() {
     }
     console.log(`Total de ${allItemIds.length} anúncios encontrados. Buscando detalhes...`);
 
-    // 3. Buscar detalhes de cada anúncio
     const produtos = [];
     for (const id of allItemIds) {
         const detailUrl = `https://api.mercadolibre.com/items/${id}`;
@@ -183,18 +175,19 @@ async function main() {
             }
         } catch (e) { /* Ignora erro se não houver descrição */ }
 
+        // ----- ÚNICA ALTERAÇÃO FOI AQUI -----
         produtos.push({
             id: detail.id,
             name: detail.title,
             description: description,
             categories: [detail.category_id],
             price: detail.price,
-            images: detail.pictures.map(pic => pic.secure_url || pic.url)
+            images: detail.pictures.map(pic => pic.secure_url || pic.url),
+            estoque: detail.available_quantity // <-- CAMPO DE ESTOQUE ADICIONADO
         });
         console.log(`   - Detalhes do produto ${detail.id} (${detail.title}) obtidos.`);
     }
 
-    // 4. Salvar o JSON final
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(produtos, null, 2), 'utf8');
     console.log(`\nArquivo ${OUTPUT_FILE} gerado com sucesso, contendo ${produtos.length} produtos.`);
 }
