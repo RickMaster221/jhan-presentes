@@ -7,9 +7,6 @@ const OUTPUT_FILE = 'produtos-ml.json';
 
 // --- FUNÇÕES AUXILIARES ---
 
-/**
- * Lê a configuração do arquivo config.json
- */
 function getConfig() {
     try {
         const configFile = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
@@ -20,23 +17,16 @@ function getConfig() {
     }
 }
 
-/**
- * Salva a nova configuração no arquivo config.json
- */
 function saveConfig(config) {
     fs.writeFileSync(CONFIG_FILE_PATH, JSON.stringify(config, null, 2), 'utf8');
 }
 
-/**
- * Faz uma requisição HTTPS e retorna o JSON
- */
 function fetchJSON(url, options = {}) {
     return new Promise((resolve, reject) => {
         https.get(url, options, (res) => {
             if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
                 return fetchJSON(res.headers.location, options).then(resolve).catch(reject);
             }
-
             let data = '';
             res.on('data', chunk => data += chunk);
             res.on('end', () => {
@@ -54,10 +44,6 @@ function fetchJSON(url, options = {}) {
     });
 }
 
-
-/**
- * Usa o Refresh Token para obter um novo Access Token
- */
 async function refreshAccessToken() {
     console.log("⚠️ Token de acesso expirado. Tentando renovar...");
     const config = getConfig();
@@ -116,13 +102,19 @@ async function main() {
         const userMeData = await fetchJSON(userMeUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
         userId = userMeData.id;
     } catch (err) {
-        if (err.statusCode === 401) {
-            accessToken = await refreshAccessToken();
-            const userMeUrl = 'https://api.mercadolibre.com/users/me';
-            const userMeData = await fetchJSON(userMeUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
-            userId = userMeData.id;
+        if (err && err.statusCode === 401) {
+            try {
+                accessToken = await refreshAccessToken();
+                const userMeUrl = 'https://api.mercadolibre.com/users/me';
+                const userMeData = await fetchJSON(userMeUrl, { headers: { 'Authorization': `Bearer ${accessToken}` } });
+                userId = userMeData.id;
+            } catch (refreshErr) {
+                console.error("ERRO CRÍTICO: Falha ao renovar o token.", refreshErr.message);
+                return; // Encerra a execução se a renovação falhar
+            }
         } else {
-            throw err;
+            console.error("Erro desconhecido ao buscar usuário:", err);
+            return;
         }
     }
 
@@ -175,7 +167,6 @@ async function main() {
             }
         } catch (e) { /* Ignora erro se não houver descrição */ }
 
-        // ----- ÚNICA ALTERAÇÃO FOI AQUI -----
         produtos.push({
             id: detail.id,
             name: detail.title,
@@ -183,7 +174,7 @@ async function main() {
             categories: [detail.category_id],
             price: detail.price,
             images: detail.pictures.map(pic => pic.secure_url || pic.url),
-            estoque: detail.available_quantity // <-- CAMPO DE ESTOQUE ADICIONADO
+            estoque: detail.available_quantity // Campo de estoque adicionado
         });
         console.log(`   - Detalhes do produto ${detail.id} (${detail.title}) obtidos.`);
     }

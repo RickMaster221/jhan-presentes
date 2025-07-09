@@ -394,3 +394,120 @@ hr {
 .status-container .btn-voltar:hover {
     background-color: #6a1eae;
 }
+
+/* Adicione este código no final de css/style.css */
+
+/* --- Estilos para a Tarja de Esgotado --- */
+
+/* Transforma o card em um container para a tarja */
+.produto-card {
+    position: relative; /* Necessário para posicionar a tarja dentro do card */
+    overflow: hidden;   /* Esconde partes da tarja que saem para fora do card */
+}
+
+/* A tarja vermelha */
+.esgotado-badge {
+    position: absolute;
+    top: 25px;
+    right: -45px;
+    background-color: #dc3545; /* Vermelho */
+    color: white;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    width: 150px;
+    transform: rotate(45deg); /* Gira a tarja */
+    box-shadow: 0 0 5px rgba(0,0,0,0.3);
+}
+
+/* --- AJUSTES GERAIS DE RESPONSIVIDADE --- */
+
+/* Para telas de até 992px (tablets em modo paisagem) */
+@media (max-width: 992px) {
+    /* Diminui o espaçamento lateral do cabeçalho */
+    .top-bar {
+        padding: 10px 20px;
+    }
+
+    /* Diminui a grade de produtos para 3 colunas */
+    .produtos-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+
+/* Para telas de até 768px (tablets em modo retrato e celulares grandes) */
+@media (max-width: 768px) {
+    /* -- Cabeçalho -- */
+    .top-bar {
+        flex-direction: column; /* Empilha os itens verticalmente */
+        gap: 15px; /* Adiciona um espaço entre os itens empilhados */
+    }
+
+    .search-bar form {
+        width: 100%; /* Faz a busca ocupar a largura total */
+    }
+
+    /* -- Barra de Categorias -- */
+    .categoria-bar {
+        flex-direction: column; /* Empilha os botões de categoria */
+        gap: 10px;
+    }
+    
+    /* -- Página de Detalhes do Produto -- */
+    /* Empilha a imagem e as informações do produto */
+    .product-detail-container { /* Adicionaremos esta classe no JS */
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    /* -- Tabela de Administração -- */
+    /* Faz a tabela rolar horizontalmente para não quebrar a página */
+    .admin-table-container {
+      overflow-x: auto;
+    }
+    .admin-container {
+        padding: 15px;
+        margin: 20px 10px;
+    }
+
+    /* Diminui a grade de produtos para 2 colunas */
+    .produtos-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+}
+
+
+/* Para telas de até 480px (celulares em modo retrato) */
+@media (max-width: 480px) {
+    body {
+        font-size: 14px; /* Ajusta o tamanho da fonte base */
+    }
+    
+    .top-bar {
+        padding: 10px;
+    }
+
+    .admin-container h1, .admin-container h2 {
+        font-size: 1.5em;
+    }
+
+    .form-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .form-row label {
+        width: 100%;
+    }
+
+    /* Diminui a grade de produtos para 1 coluna */
+    .produtos-grid {
+        grid-template-columns: 1fr;
+    }
+}

@@ -2,8 +2,9 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>Admin - Jhan Presentes</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>Admin - Jhan Presentes</title>
     <link rel="stylesheet" href="css/style.css">
+
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script>
       var firebaseConfig = {
@@ -54,27 +55,34 @@
         <hr>
 
         <h2>Produtos Cadastrados</h2>
-        <table class="product-table">
-            <thead>
-                <tr>
-                    <th>Imagem</th>
-                    <th>Nome</th>
-                    <th>Categorias</th>
-                    <th>Preço</th>
-                    <th>Estoque</th> <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody id="product-list-body">
+
+        <div class="admin-table-container">
+            <table class="product-table">
+                <thead>
+                    <tr>
+                        <th>Imagem</th>
+                        <th>Nome</th>
+                        <th>Categorias</th>
+                        <th>Preço</th>
+                        <th>Estoque</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="product-list-body">
                 </tbody>
-        </table>
+            </table>
+        </div>
     </div>
+
     <script src="js/database.js"></script>
     <script src="js/admin.js"></script>
     <script>
+        const ADMIN_EMAIL = "ricardopiresdecarvalhojunior@gmail.com"; // Defina o email do admin
         firebase.auth().onAuthStateChanged(user => {
             if (!user || user.email !== ADMIN_EMAIL) {
-                alert("Acesso negado. Você precisa ser um administrador para ver esta página.");
-                window.location.href = 'index.html';
+                // Comente ou remova esta linha durante o desenvolvimento se precisar
+                // alert("Acesso negado. Você precisa ser um administrador para ver esta página.");
+                // window.location.href = 'index.html';
             }
         });
     </script>

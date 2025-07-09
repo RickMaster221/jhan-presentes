@@ -1,4 +1,4 @@
-// js/produtos.js
+// js/produtos.js (Atualizado com a lógica de "Esgotado")
 
 document.addEventListener('DOMContentLoaded', async function() {
     const productListContainer = document.getElementById('product-list');
@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     productListContainer.innerHTML = '';
 
     if (productId) {
-        // --- PÁGINA DE DETALHES DO PRODUTO ---
+        // --- PÁGINA DE DETALHES DO PRODUTO (JÁ ATUALIZADA) ---
         const product = products.find(p => p.id === productId);
         if (!product) {
             productListContainer.innerHTML = '<p>Produto não encontrado.</p>';
@@ -27,7 +27,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
 
         productListContainer.innerHTML = `
-            <a href="produtos.html" style="font-size:15px; display:block; margin-bottom: 20px;">&larr; Voltar à Página Inicial</a>
+            <a href="produtos.html" style="font-size:15px; display:block; margin-bottom: 20px;">&larr; Voltar para a grade de produtos</a>
             <div style="display:flex; gap:40px; margin-top:20px; align-items:flex-start;">
                 <div style="display:flex; flex-direction:column; align-items:center;">
                     <img src="${imagens[0]}" class="main-img" alt="${product.nome}" style="width:320px; height:320px; object-fit:contain; border-radius:8px; box-shadow:0 2px 8px #0001; margin-bottom:10px;">
@@ -37,6 +37,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     <h2 style="margin-top:0;">${product.nome}</h2>
                     <p>${product.descricao || ''}</p>
                     <p><b>Preço:</b> ${(typeof product.preco === 'number') ? `R$ ${product.preco.toFixed(2).replace('.', ',')}` : 'Preço indisponível'}</p>
+                    <p><b>Em estoque:</b> ${product.estoque !== undefined ? product.estoque : 'Consulte'}</p>
                     <div style="margin-top:20px;">
                         <label>Quantidade: <input type="number" id="quantidade-produto" min="1" value="1" style="width:50px;"></label>
                         <button id="add-to-cart-btn" style="margin-left:10px;">Adicionar ao Carrinho</button>
@@ -46,34 +47,26 @@ document.addEventListener('DOMContentLoaded', async function() {
             </div>
         `;
 
-        // Evento para trocar imagem principal
         document.querySelectorAll('.thumb-img').forEach(thumb => {
             thumb.addEventListener('click', function() {
                 document.querySelector('.main-img').src = this.src;
             });
         });
 
-        // --- LÓGICA PARA ADICIONAR AO CARRINHO ---
         document.getElementById('add-to-cart-btn').addEventListener('click', function() {
             const quantidade = parseInt(document.getElementById('quantidade-produto').value);
-            // Pega o carrinho do localStorage ou cria um array vazio
             let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
             
-            // Verifica se o produto já está no carrinho
             const itemExistente = carrinho.find(item => item.id === productId);
 
             if (itemExistente) {
-                // Se já existe, apenas atualiza a quantidade
                 itemExistente.quantidade += quantidade;
             } else {
-                // Se não existe, adiciona o novo item
                 carrinho.push({ id: productId, quantidade: quantidade });
             }
 
-            // Salva o carrinho atualizado de volta no localStorage
             localStorage.setItem('carrinho', JSON.stringify(carrinho));
             
-            // Dá um feedback para o usuário
             const feedbackEl = document.getElementById('feedback-carrinho');
             feedbackEl.textContent = 'Produto adicionado ao carrinho!';
             setTimeout(() => { feedbackEl.textContent = ''; }, 3000);
@@ -81,20 +74,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         return;
     }
 
-    // --- PÁGINA DE GRADE DE PRODUTOS ---
+    // --- PÁGINA DE GRADE DE PRODUTOS (COM A NOVA LÓGICA) ---
     products.forEach(product => {
         const productCard = document.createElement('div');
         productCard.className = 'produto-card';
         productCard.style.cursor = 'pointer';
-        const imagens = (product.imagens && product.imagens.length > 0) ? product.imagens : ['https://via.placeholder.com/180'];
+
+        // Lógica para adicionar a tarja de "Esgotado"
+        let esgotadoBadge = '';
+        if (product.estoque !== undefined && product.estoque <= 0) {
+            esgotadoBadge = '<div class="esgotado-badge">Esgotado</div>';
+        }
+
+        const imagens = (product.imagens && product.imagens.length > 0) ? product.imagens[0] : 'https://via.placeholder.com/180';
+        
         productCard.innerHTML = `
-            <img src="${imagens[0]}" alt="${product.nome}" style="width:100%; max-width:180px; height:180px; object-fit:contain; border-radius:6px; margin-bottom:10px;">
+            ${esgotadoBadge} <img src="${imagens}" alt="${product.nome}" style="width:100%; max-width:180px; height:180px; object-fit:contain; border-radius:6px; margin-bottom:10px;">
             <h2 style="font-size:1.1em; margin:0 0 8px 0;">${product.nome}</h2>
             <span style="font-weight:bold; color:#d81b60;">${(typeof product.preco === 'number') ? `R$ ${product.preco.toFixed(2).replace('.', ',')}` : 'Preço indisponível'}</span>
         `;
-        productCard.addEventListener('click', function() {
-            window.location.href = `produtos.html?id=${product.id}`;
-        });
+        
+        // Impede o clique se o produto estiver esgotado
+        if (product.estoque !== undefined && product.estoque <= 0) {
+            productCard.style.cursor = 'default'; // Remove o cursor de "mãozinha"
+            productCard.style.opacity = '0.6'; // Deixa o card um pouco apagado
+        } else {
+            productCard.addEventListener('click', function() {
+                window.location.href = `produtos.html?id=${product.id}`;
+            });
+        }
+        
         productListContainer.appendChild(productCard);
     });
 });
