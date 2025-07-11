@@ -2,6 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Carrinho de Compras - Jhan Presentes</title>
     <link rel="stylesheet" href="css/style.css">
 
@@ -22,30 +23,40 @@
 
     <header class="top-bar">
         <div class="logo">
-            <a href="index.html"><img src="images/logo.jpeg" alt="Logo Jhan Presentes"></a>
+             <a href="index.html"><img src="images/logo.jpeg" alt="Logo Jhan Presentes"></a>
         </div>
-
         <div class="search-bar">
             <form>
                 <input type="text" name="busca" placeholder="Buscar produtos...">
                 <button type="submit">🔍</button>
             </form>
         </div>
-
         <a href="carrinho.html" class="categoria-btn" style="text-decoration: none;">🛒 Carrinho</a>
     </header>
+    
     <main class="admin-container">
         <h1>Meu Carrinho de Compras</h1>
         
         <div id="carrinho-container">
-            </div>
+            <p>Carregando itens...</p>
+        </div>
 
-        <div id="carrinho-total" style="text-align: right; font-size: 1.5em; margin-top: 20px;">
+        <hr>
+        <div id="calculo-frete" style="margin-top: 20px;">
+            <h3>Calcular Frete e Prazo</h3>
+            <input type="text" id="cep-destino" placeholder="Digite seu CEP" maxlength="9" style="padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            <button id="btn-calcular-frete" class="btn-submit" style="margin-left: 10px; padding: 8px 15px;">Calcular</button>
+            <div id="frete-error" style="color: red; margin-top: 10px; font-size: 0.9em;"></div>
+            <div id="opcoes-frete" style="margin-top: 15px;"></div>
+        </div>
+        <hr>
+        
+        <div id="carrinho-total" style="text-align: right; font-size: 1.2em; margin-top: 20px;">
             </div>
 
         <div id="carrinho-acoes" style="text-align: right; margin-top: 20px;">
-            <a href="produtos.html" class="categoria-btn" style="background-color: #6c757d;">Continuar Comprando</a>
-            <button class="btn-submit" style="background-color: #28a745;">Finalizar Compra</button>
+            <a href="produtos.html" class="categoria-btn" style="background-color: #6c757d; text-decoration: none;">Continuar Comprando</a>
+            <button class="btn-submit" style="background-color: #28a745; margin-left: 10px;">Finalizar Compra</button>
         </div>
     </main>
 
