@@ -1,3 +1,4 @@
+// js/importar-produtos.js (Atualizado para incluir peso e dimensões)
 const https = require('https');
 const fs = require('fs');
 const path = require('path');
@@ -6,7 +7,7 @@ const CONFIG_FILE_PATH = path.join(__dirname, 'config.json');
 const OUTPUT_FILE = 'produtos-ml.json';
 
 // --- FUNÇÕES AUXILIARES ---
-
+// (As funções getConfig, saveConfig, fetchJSON, e refreshAccessToken continuam as mesmas)
 function getConfig() {
     try {
         const configFile = fs.readFileSync(CONFIG_FILE_PATH, 'utf8');
@@ -110,7 +111,7 @@ async function main() {
                 userId = userMeData.id;
             } catch (refreshErr) {
                 console.error("ERRO CRÍTICO: Falha ao renovar o token.", refreshErr.message);
-                return; // Encerra a execução se a renovação falhar
+                return;
             }
         } else {
             console.error("Erro desconhecido ao buscar usuário:", err);
@@ -167,6 +168,29 @@ async function main() {
             }
         } catch (e) { /* Ignora erro se não houver descrição */ }
 
+        // --- LÓGICA ATUALIZADA PARA BUSCAR DIMENSÕES E PESO ---
+        const shippingInfo = detail.shipping || {};
+        const dimensions = shippingInfo.dimensions || {}; // Ex: "30x20x10,800" (comprimento x largura x altura, peso em gramas)
+        
+        let peso_kg = 0.3; // Valor padrão
+        let altura_cm = 10; // Valor padrão
+        let largura_cm = 15; // Valor padrão
+        let comprimento_cm = 20; // Valor padrão
+
+        if (dimensions) {
+            const parts = String(dimensions).split(',');
+            if (parts.length === 2) {
+                const dims = parts[0].split('x').map(Number);
+                if (dims.length === 3) {
+                    comprimento_cm = dims[0];
+                    largura_cm = dims[1];
+                    altura_cm = dims[2];
+                }
+                peso_kg = parseFloat(parts[1]) / 1000; // Converte gramas para kg
+            }
+        }
+        // --- FIM DA LÓGICA DE DIMENSÕES ---
+
         produtos.push({
             id: detail.id,
             name: detail.title,
@@ -174,7 +198,12 @@ async function main() {
             categories: [detail.category_id],
             price: detail.price,
             images: detail.pictures.map(pic => pic.secure_url || pic.url),
-            estoque: detail.available_quantity // Campo de estoque adicionado
+            estoque: detail.available_quantity,
+            // --- NOVOS CAMPOS ADICIONADOS ---
+            peso_kg: peso_kg,
+            altura_cm: altura_cm,
+            largura_cm: largura_cm,
+            comprimento_cm: comprimento_cm
         });
         console.log(`   - Detalhes do produto ${detail.id} (${detail.title}) obtidos.`);
     }

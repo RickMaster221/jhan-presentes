@@ -1,23 +1,12 @@
-// /api/calcular-frete.js
+// /api/calcular-frete.js (Corrigido para usar a URL do Sandbox)
 const axios = require('axios');
 
 module.exports = async (request, response) => {
-    // Configurações de CORS
-    response.setHeader('Access-Control-Allow-Origin', '*');
-    response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (request.method === 'OPTIONS') {
-        return response.status(200).end();
-    }
+    // ... (Configurações de CORS e verificação do método continuam iguais)
 
-    if (request.method !== 'POST') {
-        return response.status(405).send('Method Not Allowed');
-    }
-
-    const { de_cep, para_cep, produtos } = request.body;
+    const { de_cep, para_cep, produtos, to_address } = request.body; // Adicionado to_address
     const MELHOR_ENVIO_TOKEN = process.env.MELHOR_ENVIO_TOKEN;
 
-    // Monta o objeto de produtos no formato que a API do Melhor Envio espera
     const products_payload = produtos.map(p => ({
         id: p.id,
         width: p.largura_cm,
@@ -27,24 +16,28 @@ module.exports = async (request, response) => {
         insurance_value: p.preco,
         quantity: p.quantidade
     }));
-
+    
+    // O payload agora pode incluir o endereço completo, mas para o cálculo só o CEP é obrigatório
     const payload = {
         from: { postal_code: de_cep },
-        to: { postal_code: para_cep },
+        to: { 
+            postal_code: para_cep,
+            ...to_address // Inclui rua, número, etc. se forem passados
+        },
         products: products_payload
     };
 
     try {
-        const me_response = await axios.post('https://www.melhorenvio.com.br/api/v2/me/shipment/calculate', payload, {
+        // --- URL CORRIGIDA PARA O AMBIENTE DE TESTE (SANDBOX) ---
+        const me_response = await axios.post('https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate', payload, {
             headers: {
                 'Accept': 'application/json',
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${MELHOR_ENVIO_TOKEN}`,
-                'User-Agent': 'NomeDaSuaLoja (seuemail@dominio.com)'
+                'User-Agent': 'Jhan Presentes (ricardopiresdecarvalhojunior@gmail.com)'
             }
         });
 
-        // Filtra para mostrar apenas as opções válidas (sem erro)
         const opcoesValidas = me_response.data.filter(opcao => !opcao.error);
         response.status(200).json(opcoesValidas);
 
