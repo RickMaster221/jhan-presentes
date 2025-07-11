@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        de_cep: "SEU_CEP_DE_ORIGEM", // IMPORTANTE: Substitua pelo seu CEP
+                        de_cep: "14711600", // IMPORTANTE: Substitua pelo seu CEP
                         para_cep: para_cep,
                         produtos: carrinhoParaFrete
                     })
