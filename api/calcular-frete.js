@@ -1,8 +1,7 @@
-// /api/calcular-frete.js (Versão com diagnóstico e simplificação)
+// /api/calcular-frete.js
 const axios = require('axios');
 
 module.exports = async (request, response) => {
-    // Configurações de CORS
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
     response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -15,29 +14,36 @@ module.exports = async (request, response) => {
     }
 
     try {
-        const { de_cep, para_cep, produtos } = request.body;
+        const { de_cep, para_cep, produtos, to_address } = request.body;
         const MELHOR_ENVIO_TOKEN = process.env.MELHOR_ENVIO_TOKEN;
 
-        // Validação de dados de entrada
         if (!de_cep || !para_cep || !produtos || produtos.length === 0) {
-            return response.status(400).json({ error: 'Dados insuficientes para calcular o frete (CEP de origem, CEP de destino e produtos são obrigatórios).' });
+            return response.status(400).json({ error: 'Dados insuficientes para calcular o frete.' });
         }
+        
+        const products_payload = produtos.map(p => ({
+            id: p.id,
+            width: p.largura_cm,
+            height: p.altura_cm,
+            length: p.comprimento_cm,
+            weight: p.peso_kg,
+            insurance_value: p.preco,
+            quantity: p.quantidade
+        }));
 
         const payload = {
             from: { postal_code: String(de_cep) },
-            to: { postal_code: String(para_cep) },
-            // Simplificando o payload de produtos para o teste inicial
-            // A API do Melhor Envio é flexível e pode calcular com apenas uma das estruturas
-            package: {
-                height: produtos.reduce((sum, p) => sum + (p.altura_cm * p.quantidade), 0),
-                width: Math.max(...produtos.map(p => p.largura_cm)),
-                length: Math.max(...produtos.map(p => p.comprimento_cm)),
-                weight: produtos.reduce((sum, p) => sum + (p.peso_kg * p.quantidade), 0)
-            }
+            to: { 
+                postal_code: String(para_cep),
+                address: to_address.address,
+                number: to_address.number,
+                neighborhood: to_address.neighborhood,
+                city: to_address.city,
+                state_abbr: to_address.state
+            },
+            products: products_payload
         };
         
-        console.log("Enviando para Melhor Envio:", JSON.stringify(payload, null, 2)); // Log para ver o que está sendo enviado
-
         const me_response = await axios.post(
             'https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate', 
             payload, 
@@ -46,7 +52,7 @@ module.exports = async (request, response) => {
                     'Accept': 'application/json',
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${MELHOR_ENVIO_TOKEN}`,
-                    'User-Agent': 'Jhan Presentes (ricardopiresdecarvalhojunior@gmail.com)'
+                    'User-Agent': 'Jhan Presentes (seuemail@provedor.com)'
                 }
             }
         );
@@ -55,21 +61,7 @@ module.exports = async (request, response) => {
         response.status(200).json(opcoesValidas);
 
     } catch (error) {
-        // --- LOG DE ERRO DETALHADO ---
-        console.error("ERRO DETALHADO NA API DO MELHOR ENVIO:");
-        if (error.response) {
-            // A requisição foi feita e o servidor respondeu com um status de erro
-            console.error("Data:", error.response.data);
-            console.error("Status:", error.response.status);
-            console.error("Headers:", error.response.headers);
-        } else if (error.request) {
-            // A requisição foi feita mas nenhuma resposta foi recebida
-            console.error("Request:", error.request);
-        } else {
-            // Algo aconteceu ao configurar a requisição que acionou um erro
-            console.error('Error', error.message);
-        }
-        
+        console.error("ERRO DETALHADO NA API DO MELHOR ENVIO:", error.response ? error.response.data : "Erro na requisição");
         response.status(500).json({ 
             error: 'Não foi possível calcular o frete.',
             details: error.response ? error.response.data : error.message

@@ -9,7 +9,7 @@
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script>
       var firebaseConfig = {
-        apiKey: "AIzaSyAZ2yG95fgUzcQdjgkXxr7dYG1xtPxnZhA",
+        apiKey: "AIzaSyAZ2yG95fgUzcQdjgKXxr7dYG1xtPxnZhA",
         authDomain: "jhan-presentes.firebaseapp.com",
         projectId: "jhan-presentes"
       };
@@ -44,22 +44,27 @@
         <hr>
         <div id="calculo-frete" style="margin-top: 20px;">
             <h3>Calcular Frete e Prazo</h3>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
                 <input type="text" id="cep-destino" placeholder="CEP" maxlength="9" style="padding: 8px; flex: 1; min-width: 120px;">
-                <input type="text" id="rua-destino" placeholder="Rua / Avenida" style="padding: 8px; flex: 3; min-width: 200px;">
-                <input type="text" id="numero-destino" placeholder="Nº" style="padding: 8px; flex: 1; min-width: 60px;">
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                <input type="text" id="rua-destino" placeholder="Rua / Avenida" style="padding: 8px; flex: 3; min-width: 200px;" readonly>
+                <input type="text" id="numero-destino" placeholder="Nº (Obrigatório)" style="padding: 8px; flex: 1; min-width: 60px;">
+            </div>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <input type="text" id="bairro-destino" placeholder="Bairro" style="padding: 8px; flex: 1;" readonly>
+                <input type="text" id="cidade-destino" placeholder="Cidade" style="padding: 8px; flex: 1;" readonly>
+                <input type="text" id="estado-destino" placeholder="Estado" style="padding: 8px; flex: 0 0 80px;" readonly>
             </div>
             <div style="text-align: right; margin-top: 10px;">
-                <button id="btn-calcular-frete" class="btn-submit" style="padding: 8px 15px;">Calcular</button>
+                <button id="btn-calcular-frete" class="btn-submit" style="padding: 8px 15px;">Calcular Frete</button>
             </div>
             <div id="frete-error" style="color: red; margin-top: 10px; font-size: 0.9em;"></div>
             <div id="opcoes-frete" style="margin-top: 15px;"></div>
         </div>
         <hr>
         
-        <div id="carrinho-total" style="text-align: right; font-size: 1.2em; margin-top: 20px;">
-            </div>
-
+        <div id="carrinho-total" style="text-align: right; font-size: 1.2em; margin-top: 20px;"></div>
         <div id="carrinho-acoes" style="text-align: right; margin-top: 20px;">
             <a href="produtos.html" class="categoria-btn" style="background-color: #6c757d; text-decoration: none;">Continuar Comprando</a>
             <button class="btn-submit" id="btn-finalizar-compra" style="background-color: #28a745; margin-left: 10px;">Finalizar Compra</button>
