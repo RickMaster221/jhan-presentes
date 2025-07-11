@@ -1,11 +1,25 @@
-// /api/calcular-frete.js (Corrigido para usar a URL do Sandbox)
+// /api/calcular-frete.js
 const axios = require('axios');
 
 module.exports = async (request, response) => {
-    // ... (Configurações de CORS e verificação do método continuam iguais)
+    // Configurações de CORS
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (request.method === 'OPTIONS') {
+        return response.status(200).end();
+    }
 
-    const { de_cep, para_cep, produtos, to_address } = request.body; // Adicionado to_address
+    if (request.method !== 'POST') {
+        return response.status(405).send('Method Not Allowed');
+    }
+
+    const { de_cep, para_cep, produtos } = request.body;
     const MELHOR_ENVIO_TOKEN = process.env.MELHOR_ENVIO_TOKEN;
+
+    if (!de_cep || !para_cep || !produtos) {
+        return response.status(400).json({ error: 'Dados insuficientes para calcular o frete.' });
+    }
 
     const products_payload = produtos.map(p => ({
         id: p.id,
@@ -16,19 +30,14 @@ module.exports = async (request, response) => {
         insurance_value: p.preco,
         quantity: p.quantidade
     }));
-    
-    // O payload agora pode incluir o endereço completo, mas para o cálculo só o CEP é obrigatório
+
     const payload = {
         from: { postal_code: de_cep },
-        to: { 
-            postal_code: para_cep,
-            ...to_address // Inclui rua, número, etc. se forem passados
-        },
+        to: { postal_code: para_cep },
         products: products_payload
     };
 
     try {
-        // --- URL CORRIGIDA PARA O AMBIENTE DE TESTE (SANDBOX) ---
         const me_response = await axios.post('https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate', payload, {
             headers: {
                 'Accept': 'application/json',

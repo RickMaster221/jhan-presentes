@@ -1,16 +1,44 @@
-// js/carrinho.js
+// js/carrinho.js (Versão final otimizada)
 
 document.addEventListener('DOMContentLoaded', async function() {
     const carrinhoContainer = document.getElementById('carrinho-container');
     const totalContainer = document.getElementById('carrinho-total');
     const acoesContainer = document.getElementById('carrinho-acoes');
 
-    let totalCarrinho = 0; // Variável global para o subtotal dos produtos
-    let freteSelecionado = 0; // Variável global para o valor do frete
-    let todosProdutos = []; // Armazena todos os produtos do banco
-    let carrinho = []; // Armazena os itens do carrinho
+    let totalCarrinho = 0;
+    let freteSelecionado = 0;
+    const carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
+    let produtosNoCarrinho = [];
 
-    // Função para renderizar o total
+    // Função otimizada para buscar apenas os produtos que estão no carrinho
+    async function fetchProductsInCart() {
+        if (carrinho.length === 0) return [];
+        
+        const db = firebase.firestore();
+        const productIds = carrinho.map(item => item.id);
+        const produtosTemp = [];
+
+        const promises = [];
+        for (let i = 0; i < productIds.length; i += 10) {
+            const batchIds = productIds.slice(i, i + 10);
+            promises.push(
+                db.collection('produtos').where(firebase.firestore.FieldPath.documentId(), 'in', batchIds).get()
+            );
+        }
+
+        const snapshots = await Promise.all(promises);
+        snapshots.forEach(snapshot => {
+            snapshot.forEach(doc => {
+                produtosTemp.push({ id: doc.id, ...doc.data() });
+            });
+        });
+
+        return carrinho.map(item => {
+            const produtoInfo = produtosTemp.find(p => p.id === item.id);
+            return produtoInfo ? { ...produtoInfo, quantidade: item.quantidade } : null;
+        }).filter(item => item !== null); // Remove itens que não foram encontrados
+    }
+
     function atualizarTotalComFrete() {
         const novoTotal = totalCarrinho + freteSelecionado;
         if (totalContainer) {
@@ -24,11 +52,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    // Função principal para montar a página do carrinho
     async function montarCarrinho() {
-        todosProdutos = await getProducts();
-        carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
-
         if (carrinho.length === 0) {
             carrinhoContainer.innerHTML = '<p>Seu carrinho está vazio.</p>';
             if (totalContainer) totalContainer.style.display = 'none';
@@ -36,105 +60,117 @@ document.addEventListener('DOMContentLoaded', async function() {
             document.getElementById('calculo-frete').style.display = 'none';
             return;
         }
+        
+        produtosNoCarrinho = await fetchProductsInCart();
 
         let htmlItens = `<table class="product-table">
                             <thead>
-                                <tr>
-                                    <th>Produto</th>
-                                    <th>Preço</th>
-                                    <th>Quantidade</th>
-                                    <th>Subtotal</th>
-                                    <th>Ação</th>
-                                </tr>
+                                <tr><th>Produto</th><th>Preço</th><th>Quantidade</th><th>Subtotal</th><th>Ação</th></tr>
                             </thead>
                             <tbody>`;
         totalCarrinho = 0;
 
-        carrinho.forEach(item => {
-            const produtoInfo = todosProdutos.find(p => p.id === item.id);
-            if (produtoInfo) {
-                const subtotal = produtoInfo.preco * item.quantidade;
-                totalCarrinho += subtotal;
-                const img = (produtoInfo.imagens && produtoInfo.imagens.length > 0) ? produtoInfo.imagens[0] : 'https://via.placeholder.com/60';
-                
-                htmlItens += `
-                    <tr>
-                        <td>
-                            <div style="display: flex; align-items: center;">
-                                <img src="${img}" alt="${produtoInfo.nome}" width="60" style="margin-right: 10px; border-radius: 4px;">
-                                <span>${produtoInfo.nome}</span>
-                            </div>
-                        </td>
-                        <td>R$ ${produtoInfo.preco.toFixed(2).replace('.', ',')}</td>
-                        <td>${item.quantidade}</td>
-                        <td>R$ ${subtotal.toFixed(2).replace('.', ',')}</td>
-                        <td><button class="btn-action delete" onclick="removerDoCarrinho('${item.id}')">Remover</button></td>
-                    </tr>
-                `;
-            }
+        produtosNoCarrinho.forEach(item => {
+            const subtotal = item.preco * item.quantidade;
+            totalCarrinho += subtotal;
+            const img = (item.imagens && item.imagens.length > 0) ? item.imagens[0] : 'https://via.placeholder.com/60';
+            
+            htmlItens += `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center;">
+                            <img src="${img}" alt="${item.nome}" width="60" style="margin-right: 10px; border-radius: 4px;">
+                            <span>${item.nome}</span>
+                        </div>
+                    </td>
+                    <td>R$ ${item.preco.toFixed(2).replace('.', ',')}</td>
+                    <td>${item.quantidade}</td>
+                    <td>R$ ${subtotal.toFixed(2).replace('.', ',')}</td>
+                    <td><button class="btn-action delete" onclick="removerDoCarrinho('${item.id}')">Remover</button></td>
+                </tr>`;
         });
 
         htmlItens += `</tbody></table>`;
         if (carrinhoContainer) carrinhoContainer.innerHTML = htmlItens;
         
-        atualizarTotalComFrete(); // Atualiza o total inicial (sem frete)
+        atualizarTotalComFrete();
     }
 
-// --- LÓGICA DO FRETE ---
-const btnCalcularFrete = document.getElementById('btn-calcular-frete');
-// Novos campos de endereço
-const cepInput = document.getElementById('cep-destino');
-const ruaInput = document.getElementById('rua-destino');
-const numeroInput = document.getElementById('numero-destino');
+    // --- LÓGICA DO FRETE ---
+    const btnCalcularFrete = document.getElementById('btn-calcular-frete');
+    if (btnCalcularFrete) {
+        btnCalcularFrete.addEventListener('click', async () => {
+            const cepInput = document.getElementById('cep-destino');
+            const freteErrorContainer = document.getElementById('frete-error');
+            const opcoesFreteContainer = document.getElementById('opcoes-frete');
+            const para_cep = cepInput.value.replace(/\D/g, '');
 
-const opcoesFreteContainer = document.getElementById('opcoes-frete');
-const freteErrorContainer = document.getElementById('frete-error');
-let freteSelecionado = 0;
-
-if(btnCalcularFrete) {
-    btnCalcularFrete.addEventListener('click', async () => {
-        const para_cep = cepInput.value.replace(/\D/g, '');
-        if (para_cep.length !== 8) {
-            freteErrorContainer.textContent = 'Por favor, digite um CEP válido com 8 dígitos.';
-            return;
-        }
-        
-        freteErrorContainer.textContent = '';
-        opcoesFreteContainer.innerHTML = 'Calculando...';
-
-        const carrinhoParaFrete = carrinho.map(item => { /* ... o map continua igual ... */ });
-        
-        try {
-            const response = await fetch('/api/calcular-frete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    de_cep: "SEU_CEP_DE_ORIGEM",
-                    para_cep: para_cep,
-                    produtos: carrinhoParaFrete,
-                    // Enviando os dados de endereço
-                    to_address: {
-                        address: ruaInput.value,
-                        number: numeroInput.value
-                    }
-                })
-            });
+            if (para_cep.length !== 8) {
+                freteErrorContainer.textContent = 'Por favor, digite um CEP válido com 8 dígitos.';
+                return;
+            }
             
-            // ... O resto da lógica para tratar a resposta e exibir as opções continua o mesmo ...
+            freteErrorContainer.textContent = '';
+            opcoesFreteContainer.innerHTML = 'Calculando...';
 
-        } catch (error) {
-            console.error("Erro ao calcular frete:", error);
-            freteErrorContainer.textContent = 'Não foi possível calcular o frete. Tente novamente.';
-            opcoesFreteContainer.innerHTML = '';
-        }
-    });
-}
+            const carrinhoParaFrete = produtosNoCarrinho.map(p => ({
+                id: p.id,
+                largura_cm: p.largura_cm || 15,
+                altura_cm: p.altura_cm || 5,
+                comprimento_cm: p.comprimento_cm || 20,
+                peso_kg: p.peso_kg || 0.3,
+                preco: p.preco,
+                quantidade: p.quantidade
+            }));
+
+            try {
+                const response = await fetch('/api/calcular-frete', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        de_cep: "14711600",
+                        para_cep: para_cep,
+                        produtos: carrinhoParaFrete
+                    })
+                });
+                
+                if (!response.ok) throw new Error("Erro do servidor ao calcular frete.");
+                const opcoes = await response.json();
+
+                if (opcoes.length === 0) {
+                    opcoesFreteContainer.innerHTML = '<p style="color: #dc3545;">Nenhuma opção de frete encontrada para este CEP.</p>';
+                    return;
+                }
+
+                let opcoesHtml = '<h4>Escolha uma opção de entrega:</h4>';
+                opcoes.forEach(opcao => {
+                    opcoesHtml += `
+                        <label style="display: block; margin-bottom: 5px; cursor: pointer; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                            <input type="radio" name="opcao_frete" value="${opcao.price}">
+                            <strong>${opcao.name}</strong> - R$ ${opcao.price} (Prazo: ${opcao.delivery_time} dias)
+                        </label>`;
+                });
+                opcoesFreteContainer.innerHTML = opcoesHtml;
+
+                document.querySelectorAll('input[name="opcao_frete"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        freteSelecionado = parseFloat(this.value);
+                        atualizarTotalComFrete();
+                    });
+                });
+            } catch (error) {
+                console.error("Erro ao calcular frete:", error);
+                freteErrorContainer.textContent = 'Não foi possível calcular o frete. Tente novamente.';
+                opcoesFreteContainer.innerHTML = '';
+            }
+        });
+    }
 
     // --- LÓGICA DE FINALIZAR COMPRA ---
-    const btnFinalizar = acoesContainer ? acoesContainer.querySelector('.btn-submit') : null;
+    const btnFinalizar = document.getElementById('btn-finalizar-compra');
     if(btnFinalizar) {
         btnFinalizar.addEventListener('click', async () => {
-            if (freteSelecionado <= 0) {
+            if (carrinho.length > 0 && freteSelecionado <= 0) {
                 alert("Por favor, calcule e selecione uma opção de frete antes de finalizar a compra.");
                 return;
             }
@@ -142,11 +178,13 @@ if(btnCalcularFrete) {
             btnFinalizar.textContent = 'Processando...';
             btnFinalizar.disabled = true;
 
-            const itensParaCheckout = carrinho.map(item => {
-                const produtoInfo = todosProdutos.find(p => p.id === item.id);
-                return { nome: produtoInfo.nome, preco: produtoInfo.preco, quantidade: item.quantidade, id: item.id };
-            });
-            // Adiciona o frete como um item separado
+            const itensParaCheckout = produtosNoCarrinho.map(item => ({
+                id: item.id,
+                nome: item.nome,
+                preco: item.preco,
+                quantidade: item.quantidade
+            }));
+            
             itensParaCheckout.push({
                 id: 'frete',
                 nome: 'Custo de Envio',
@@ -175,11 +213,9 @@ if(btnCalcularFrete) {
         });
     }
 
-    // Chama a função inicial para montar o carrinho
     montarCarrinho();
 });
 
-// Função global para remover item do carrinho
 function removerDoCarrinho(productId) {
     let carrinho = JSON.parse(localStorage.getItem('carrinho')) || [];
     const novoCarrinho = carrinho.filter(item => item.id !== productId);

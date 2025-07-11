@@ -42,19 +42,19 @@
         </div>
 
         <hr>
-<div id="calculo-frete">
-    <h3>Calcular Frete e Prazo</h3>
-    <div style="display: flex; flex-wrap: wrap; gap: 10px;">
-        <input type="text" id="cep-destino" placeholder="CEP" maxlength="9" style="padding: 8px; flex: 1;">
-        <input type="text" id="rua-destino" placeholder="Rua / Avenida" style="padding: 8px; flex: 3;">
-        <input type="text" id="numero-destino" placeholder="Nº" style="padding: 8px; flex: 1;">
-    </div>
-    <div style="text-align: right; margin-top: 10px;">
-        <button id="btn-calcular-frete" class="btn-submit" style="padding: 8px 15px;">Calcular</button>
-    </div>
-    <div id="frete-error" style="color: red; margin-top: 10px; font-size: 0.9em;"></div>
-    <div id="opcoes-frete" style="margin-top: 15px;"></div>
-</div>
+        <div id="calculo-frete" style="margin-top: 20px;">
+            <h3>Calcular Frete e Prazo</h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 10px;">
+                <input type="text" id="cep-destino" placeholder="CEP" maxlength="9" style="padding: 8px; flex: 1; min-width: 120px;">
+                <input type="text" id="rua-destino" placeholder="Rua / Avenida" style="padding: 8px; flex: 3; min-width: 200px;">
+                <input type="text" id="numero-destino" placeholder="Nº" style="padding: 8px; flex: 1; min-width: 60px;">
+            </div>
+            <div style="text-align: right; margin-top: 10px;">
+                <button id="btn-calcular-frete" class="btn-submit" style="padding: 8px 15px;">Calcular</button>
+            </div>
+            <div id="frete-error" style="color: red; margin-top: 10px; font-size: 0.9em;"></div>
+            <div id="opcoes-frete" style="margin-top: 15px;"></div>
+        </div>
         <hr>
         
         <div id="carrinho-total" style="text-align: right; font-size: 1.2em; margin-top: 20px;">
@@ -62,7 +62,7 @@
 
         <div id="carrinho-acoes" style="text-align: right; margin-top: 20px;">
             <a href="produtos.html" class="categoria-btn" style="background-color: #6c757d; text-decoration: none;">Continuar Comprando</a>
-            <button class="btn-submit" style="background-color: #28a745; margin-left: 10px;">Finalizar Compra</button>
+            <button class="btn-submit" id="btn-finalizar-compra" style="background-color: #28a745; margin-left: 10px;">Finalizar Compra</button>
         </div>
     </main>
 
