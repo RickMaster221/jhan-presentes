@@ -187,7 +187,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const opcoes = await response.json();
                 if (opcoes.length === 0) { opcoesFreteContainer.innerHTML = '<p style="color: #dc3545;">Nenhuma opção de frete encontrada.</p>'; return; }
                 let opcoesHtml = '<h4>Escolha uma opção de entrega:</h4>';
-                opcoes.forEach(o => { opcoesHtml += `<label style="display: block; ..."><input type="radio" name="opcao_frete" value="${o.price}"> ... </label>`; });
+                opcoes.forEach(opcao => {
+                    opcoesHtml += `
+                        <label style="display: block; margin-bottom: 5px; cursor: pointer; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                            <input type="radio" name="opcao_frete" value="${opcao.price}">
+                            <strong>${opcao.name}</strong> - R$ ${opcao.price} (Prazo: ${opcao.delivery_time} dias)
+                        </label>
+                    `;
+                });
                 opcoesFreteContainer.innerHTML = opcoesHtml;
                 document.querySelectorAll('input[name="opcao_frete"]').forEach(r => r.addEventListener('change', function() { freteSelecionado = parseFloat(this.value); atualizarTotalComFrete(); }));
             } catch (error) { console.error("Erro:", error); freteErrorContainer.textContent = 'Não foi possível calcular o frete.'; opcoesFreteContainer.innerHTML = ''; }
