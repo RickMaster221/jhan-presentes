@@ -1,5 +1,6 @@
-// /api/webhook-mercadopago.js (Versão final com baixa de estoque)
+// /api/webhook-mercadopago.js (Versão final com validação e baixa de estoque)
 const admin = require('firebase-admin');
+const crypto = require('crypto'); // Módulo para a validação
 
 // --- Configuração do Firebase Admin ---
 if (!admin.apps.length) {
@@ -23,47 +24,70 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// --- Função Principal do Webhook ---
-module.exports = async (request, response) => {
-    if (request.method !== 'POST') {
-        return response.status(405).send('Method Not Allowed');
+// --- Função de Validação de Assinatura ---
+function validateSignature(request, secret) {
+    const signature = request.headers['x-signature'];
+    const requestId = request.headers['x-request-id'];
+
+    if (!signature || !requestId) {
+        throw new Error('Assinatura ou ID da requisição ausente no cabeçalho.');
     }
 
-    const { type, data } = request.body;
+    const parts = signature.split(',');
+    const ts = parts.find(part => part.startsWith('ts=')).split('=')[1];
+    const hash = parts.find(part => part.startsWith('v1=')).split('=')[1];
+    
+    const manifest = `id:${requestId};request-timestamp:${ts};`;
+    const hmac = crypto.createHmac('sha256', secret);
+    hmac.update(manifest);
+    const expectedSignature = hmac.digest('hex');
 
-    // Processa apenas notificações de pagamento
-    if (type === 'payment' && data && data.id) {
-        const paymentId = data.id;
-        console.log(`Recebida notificação para o pagamento: ${paymentId}`);
+    if (expectedSignature !== hash) {
+        throw new Error('Assinatura do Webhook inválida.');
+    }
+    console.log("✅ Assinatura do Webhook validada com sucesso.");
+}
 
-        try {
-            // Busca os detalhes completos do pagamento no Mercado Pago
+
+// --- Função Principal do Webhook ---
+module.exports = async (request, response) => {
+    try {
+        // 1. Valida a assinatura para garantir que a requisição é do Mercado Pago
+        const secret = process.env.MP_WEBHOOK_SECRET;
+        if (secret) {
+            validateSignature(request, secret);
+        } else {
+            console.warn("⚠️ A variável de ambiente MP_WEBHOOK_SECRET não está configurada. A validação foi ignorada.");
+        }
+
+        // 2. Continua com a sua lógica de processamento
+        const { type, data } = request.body;
+        if (type === 'payment' && data && data.id) {
+            const paymentId = data.id;
+            console.log(`Recebida notificação para o pagamento: ${paymentId}`);
+
             const mpResponse = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
                 headers: { 'Authorization': `Bearer ${process.env.MP_ACCESS_TOKEN}` }
             });
             if (!mpResponse.ok) {
-                throw new Error('Falha ao buscar detalhes do pagamento no Mercado Pago.');
+                const errorBody = await mpResponse.text();
+                throw new Error(`Falha ao buscar detalhes do pagamento no MP: ${errorBody}`);
             }
             const paymentDetails = await mpResponse.json();
 
-            // Só continua se o pagamento estiver aprovado
             if (paymentDetails.status === 'approved') {
                 console.log('Pagamento aprovado. Iniciando atualização de estoque...');
                 
                 const items = paymentDetails.additional_info ? paymentDetails.additional_info.items : [];
                 if (!items || items.length === 0) {
-                    console.log("Nenhum item encontrado nos detalhes do pagamento para atualizar.");
-                    return response.status(200).send('Pagamento sem itens para atualizar.');
+                    console.log("Nenhum item encontrado no pagamento para atualizar.");
+                    return response.status(200).send('OK: Pagamento aprovado sem itens para atualizar.');
                 }
 
-                const batch = db.batch(); // Usamos um batch para atualizar todos os produtos de uma vez
-
+                const batch = db.batch();
                 items.forEach(item => {
-                    // Ignora o item "frete" que não tem estoque
-                    if (item.id === 'frete') {
-                        return; 
-                    }
-
+                    if (item.id === 'frete') return;
+                    
                     const productId = item.id;
                     const quantidadeComprada = parseInt(item.quantity, 10);
                     
@@ -73,26 +97,29 @@ module.exports = async (request, response) => {
                     }
 
                     const productRef = db.collection('produtos').doc(productId);
-                    
-                    // Usa FieldValue.increment para subtrair a quantidade de forma segura
                     batch.update(productRef, { 
                         estoque: admin.firestore.FieldValue.increment(-quantidadeComprada) 
                     });
                     console.log(`Produto ${productId}: estoque será decrementado em ${quantidadeComprada}.`);
                 });
 
-                // Executa todas as atualizações de estoque de uma vez
                 await batch.commit();
                 console.log("Estoque atualizado com sucesso no Firebase.");
             } else {
                 console.log(`Status do pagamento não é 'approved' (${paymentDetails.status}). Nenhuma ação de estoque necessária.`);
             }
-        } catch (error) {
-            console.error("Erro ao processar o webhook:", error);
-            return response.status(200).json({ status: 'error', message: error.message });
         }
+        
+        // Responde ao Mercado Pago que a notificação foi recebida com sucesso.
+        response.status(200).send('Notificação recebida.');
+
+    } catch (error) {
+        console.error("ERRO no processamento do webhook:", error.message);
+        // Se a assinatura for inválida, é um erro de segurança (Proibido)
+        if (error.message.includes('Assinatura')) {
+            return response.status(403).send(error.message);
+        }
+        // Para outros erros, responde 200 para o MP não ficar reenviando, mas loga o erro.
+        return response.status(200).json({ status: 'error', message: error.message });
     }
-    
-    // Responde ao Mercado Pago com status 200 para confirmar o recebimento
-    response.status(200).send('Notificação recebida e processada.');
 };
