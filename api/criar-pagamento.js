@@ -42,9 +42,9 @@ module.exports = async (request, response) => {
         const preferenceBody = {
             items: items_preference,
             back_urls: {
-                success: 'https://jhan-presentes-hq3k.vercel.app/pagamento_concluido.html',
-                failure: 'https://jhan-presentes-hq3k.vercel.app/pagamento_falhou.html',
-                pending: 'https://jhan-presentes-hq3k.vercel.app/pagamento_pendente.html'
+                success: 'https://jhan-presentes.vercel.app/pagamento_concluido.html',
+                failure: 'https://jhan-presentes.vercel.app/pagamento_falhou.html',
+                pending: 'https://jhan-presentes.vercel.app/pagamento_pendente.html'
             },
             auto_return: 'approved',
         };
