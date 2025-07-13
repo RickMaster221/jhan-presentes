@@ -5,7 +5,7 @@ const { MercadoPagoConfig, Preference } = require('mercadopago');
 
 // 2. Inicializa o cliente com seu Access Token
 const client = new MercadoPagoConfig({ 
-    accessToken: process.env.ME_ACCESS_TOKEN 
+    accessToken: process.env.ML_ACCESS_TOKEN 
 });
 
 // A função serverless que vai receber os dados do carrinho
