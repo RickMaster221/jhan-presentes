@@ -1,6 +1,5 @@
-// /api/webhook-mercadopago.js (Versão final com validação e baixa de estoque)
+// /api/webhook-mercadopago.js (COM VALIDAÇÃO DESATIVADA PARA TESTE)
 const admin = require('firebase-admin');
-const crypto = require('crypto'); // Módulo para a validação
 
 // --- Configuração do Firebase Admin ---
 if (!admin.apps.length) {
@@ -24,43 +23,12 @@ if (!admin.apps.length) {
 }
 const db = admin.firestore();
 
-// --- Função de Validação de Assinatura ---
-function validateSignature(request, secret) {
-    const signature = request.headers['x-signature'];
-    const requestId = request.headers['x-request-id'];
-
-    if (!signature || !requestId) {
-        throw new Error('Assinatura ou ID da requisição ausente no cabeçalho.');
-    }
-
-    const parts = signature.split(',');
-    const ts = parts.find(part => part.startsWith('ts=')).split('=')[1];
-    const hash = parts.find(part => part.startsWith('v1=')).split('=')[1];
-    
-    const manifest = `id:${requestId};request-timestamp:${ts};`;
-    const hmac = crypto.createHmac('sha256', secret);
-    hmac.update(manifest);
-    const expectedSignature = hmac.digest('hex');
-
-    if (expectedSignature !== hash) {
-        throw new Error('Assinatura do Webhook inválida.');
-    }
-    console.log("✅ Assinatura do Webhook validada com sucesso.");
-}
-
-
 // --- Função Principal do Webhook ---
 module.exports = async (request, response) => {
-    try {
-        // 1. Valida a assinatura para garantir que a requisição é do Mercado Pago
-        const secret = process.env.MP_WEBHOOK_SECRET;
-        if (secret) {
-            validateSignature(request, secret);
-        } else {
-            console.warn("⚠️ A variável de ambiente MP_WEBHOOK_SECRET não está configurada. A validação foi ignorada.");
-        }
+    // A VALIDAÇÃO DA ASSINATURA FOI REMOVIDA APENAS PARA ESTE TESTE
+    console.log("AVISO: Executando webhook em modo de teste sem validação de assinatura.");
 
-        // 2. Continua com a sua lógica de processamento
+    try {
         const { type, data } = request.body;
         if (type === 'payment' && data && data.id) {
             const paymentId = data.id;
@@ -110,16 +78,10 @@ module.exports = async (request, response) => {
             }
         }
         
-        // Responde ao Mercado Pago que a notificação foi recebida com sucesso.
         response.status(200).send('Notificação recebida.');
 
     } catch (error) {
         console.error("ERRO no processamento do webhook:", error.message);
-        // Se a assinatura for inválida, é um erro de segurança (Proibido)
-        if (error.message.includes('Assinatura')) {
-            return response.status(403).send(error.message);
-        }
-        // Para outros erros, responde 200 para o MP não ficar reenviando, mas loga o erro.
-        return response.status(200).json({ status: 'error', message: error.message });
+        return response.status(500).json({ status: 'error', message: error.message });
     }
 };
