@@ -1,13 +1,32 @@
-// js/admin.js (Completo com filtros e ordenação)
+// js/admin.js (Refatorado para usar a coleção de categorias)
+
+/**
+ * Popula o menu de categorias no formulário de produtos.
+ */
+async function populateCategoryDropdown(selectElementId, selectedCategoryId = null) {
+    const select = document.getElementById(selectElementId);
+    if (!select) return;
+    
+    select.innerHTML = '<option value="">Selecione uma categoria</option>';
+    const categories = await getCategories();
+    
+    categories.forEach(cat => {
+        const option = document.createElement('option');
+        option.value = cat.id; // Salva o ID da categoria
+        option.textContent = cat.nome; // Mostra o nome da categoria
+        if (cat.id === selectedCategoryId) {
+            option.selected = true;
+        }
+        select.appendChild(option);
+    });
+}
 
 /**
  * Cria dinamicamente os campos de filtro e ordenação e os insere na página.
  */
 async function criarControlesDeFiltro() {
     const container = document.querySelector('.admin-container');
-    const tabela = document.querySelector('.product-table');
-    
-    // Evita criar os filtros mais de uma vez
+    const tableContainer = document.querySelector('.admin-table-container');
     if (document.getElementById('filtros-container')) return;
 
     const controlesDiv = document.createElement('div');
@@ -21,17 +40,11 @@ async function criarControlesDeFiltro() {
     controlesDiv.style.gap = '15px';
     controlesDiv.style.alignItems = 'flex-end';
 
-    const produtos = await getProducts();
-    const todasCategorias = new Set();
-    produtos.forEach(p => {
-        if (Array.isArray(p.categorias)) {
-            p.categorias.forEach(cat => todasCategorias.add(cat));
-        }
-    });
-
+    const categorias = await getCategories();
     let categoriasOptions = '<option value="">Todas as Categorias</option>';
-    todasCategorias.forEach(cat => {
-        categoriasOptions += `<option value="${cat}">${cat}</option>`;
+    categorias.forEach(cat => {
+        // Filtra pelo nome da categoria, que é uma string
+        categoriasOptions += `<option value="${cat.nome}">${cat.nome}</option>`;
     });
 
     controlesDiv.innerHTML = `
@@ -56,10 +69,8 @@ async function criarControlesDeFiltro() {
         </div>
     `;
 
-    // Insere os controles antes da tabela de produtos
-    container.insertBefore(controlesDiv, tabela);
+    container.insertBefore(controlesDiv, tableContainer);
 
-    // Adiciona os eventos que atualizam a tabela
     document.getElementById('filtro-nome').addEventListener('input', () => displayProducts());
     document.getElementById('filtro-categoria').addEventListener('change', () => displayProducts());
     document.getElementById('ordenar-por').addEventListener('change', () => displayProducts());
@@ -71,25 +82,28 @@ async function criarControlesDeFiltro() {
  */
 async function displayProducts() {
     let products = await getProducts();
+    const categories = await getCategories();
+    const categoryMap = new Map(categories.map(cat => [cat.id, cat.nome]));
+
     const tableBody = document.getElementById('product-list-body');
     if (!tableBody) return;
-
-    // Pega os valores atuais dos filtros, se eles já existirem
+    
     const filtroNome = document.getElementById('filtro-nome')?.value.toLowerCase() || '';
     const filtroCategoria = document.getElementById('filtro-categoria')?.value || '';
     const ordenarPor = document.getElementById('ordenar-por')?.value || 'nome-asc';
 
-    // 1. Aplica o filtro de nome
     if (filtroNome) {
         products = products.filter(p => p.nome && p.nome.toLowerCase().includes(filtroNome));
     }
-
-    // 2. Aplica o filtro de categoria
+    
+    // Filtra pelo nome da categoria
     if (filtroCategoria) {
-        products = products.filter(p => p.categorias && p.categorias.includes(filtroCategoria));
+        products = products.filter(p => {
+            const categoryName = categoryMap.get(p.categoriaId);
+            return categoryName === filtroCategoria;
+        });
     }
 
-    // 3. Aplica a ordenação
     products.sort((a, b) => {
         switch (ordenarPor) {
             case 'nome-desc': return b.nome.localeCompare(a.nome);
@@ -97,18 +111,19 @@ async function displayProducts() {
             case 'preco-desc': return (b.preco || 0) - (a.preco || 0);
             case 'estoque-asc': return (a.estoque || 0) - (b.estoque || 0);
             case 'estoque-desc': return (b.estoque || 0) - (a.estoque || 0);
-            default: return a.nome.localeCompare(b.nome); // Padrão é nome-asc
+            default: return a.nome.localeCompare(b.nome);
         }
     });
 
     tableBody.innerHTML = '';
-
     products.forEach(product => {
         const row = tableBody.insertRow();
+        const categoryName = categoryMap.get(product.categoriaId) || 'Sem Categoria';
+
         row.innerHTML = `
             <td><img src="${(product.imagens && product.imagens.length > 0) ? product.imagens[0] : 'https://via.placeholder.com/60'}" alt="Imagem" width="60"></td>
             <td>${product.nome || '-'}</td>
-            <td>${Array.isArray(product.categorias) ? product.categorias.join(', ') : (product.categorias || '-')}</td>
+            <td>${categoryName}</td>
             <td>${(typeof product.preco === 'number') ? `R$ ${product.preco.toFixed(2).replace('.', ',')}` : '-'}</td>
             <td>${product.estoque !== undefined ? product.estoque : '-'}</td>
             <td>
@@ -119,7 +134,6 @@ async function displayProducts() {
     });
 }
 
-// (O resto do seu código para remover, editar e cadastrar continua igual)
 function removeProduct(productId) {
     if (confirm('Tem certeza que deseja excluir este produto?')) {
         deleteProduct(productId);
@@ -127,6 +141,7 @@ function removeProduct(productId) {
     }
 }
 
+// Modal de edição
 const modalHtml = `
 <div id="edit-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
   <div style="background:#fff; padding:30px; border-radius:8px; min-width:320px; max-width:90vw; position:relative;">
@@ -135,13 +150,13 @@ const modalHtml = `
       <input type="hidden" id="edit-id">
       <div class="form-row"><label>Nome:</label><input type="text" id="edit-name" required></div>
       <div class="form-row"><label>Descrição:</label><textarea id="edit-description" required></textarea></div>
-      <div class="form-row"><label>Categorias:</label><input type="text" id="edit-categories"></div>
+      <div class="form-row"><label>Categoria:</label><select id="edit-category" required></select></div>
       <div class="form-row"><label>Preço (R$):</label><input type="number" id="edit-price" step="0.01" required></div>
       <div class="form-row"><label>Estoque:</label><input type="number" id="edit-stock" required></div>
       <div class="form-row"><label>Imagens (URLs):</label><input type="text" id="edit-images"></div>
       <div style="margin-top:15px; text-align:right;">
         <button type="button" id="close-modal" style="margin-right:10px;">Cancelar</button>
-        <button type="submit" class="btn-submit">Salvar</button>
+        <button type="submit" class="btn-submit">Salvar Alterações</button>
       </div>
     </form>
   </div>
@@ -149,17 +164,21 @@ const modalHtml = `
 document.body.insertAdjacentHTML('beforeend', modalHtml);
 
 window.editProduct = async function(productId) {
-  const products = await getProducts();
-  const product = products.find(p => p.id === productId);
-  if (!product) return alert('Produto não encontrado!');
-  document.getElementById('edit-id').value = product.id;
-  document.getElementById('edit-name').value = product.nome || '';
-  document.getElementById('edit-description').value = product.descricao || '';
-  document.getElementById('edit-categories').value = Array.isArray(product.categorias) ? product.categorias.join(', ') : (product.categorias || '');
-  document.getElementById('edit-price').value = product.preco || '';
-  document.getElementById('edit-stock').value = product.estoque !== undefined ? product.estoque : ''; 
-  document.getElementById('edit-images').value = (product.imagens && product.imagens.length > 0) ? product.imagens.join(', ') : '';
-  document.getElementById('edit-modal').style.display = 'flex';
+    const products = await getProducts();
+    const product = products.find(p => p.id === productId);
+    if (!product) return alert('Produto não encontrado!');
+    
+    document.getElementById('edit-id').value = product.id;
+    document.getElementById('edit-name').value = product.nome || '';
+    document.getElementById('edit-description').value = product.descricao || '';
+    document.getElementById('edit-price').value = product.preco || '';
+    document.getElementById('edit-stock').value = product.estoque !== undefined ? product.estoque : ''; 
+    document.getElementById('edit-images').value = (product.imagens && product.imagens.length > 0) ? product.imagens.join(', ') : '';
+    
+    // Popula o dropdown e seleciona a categoria correta
+    await populateCategoryDropdown('edit-category', product.categoriaId);
+    
+    document.getElementById('edit-modal').style.display = 'flex';
 }
 
 function closeEditModal() {
@@ -167,6 +186,7 @@ function closeEditModal() {
 }
 document.getElementById('close-modal').onclick = closeEditModal;
 
+// Função de Salvar Edição
 async function updateProductInFirestore(productId, data) {
   await db.collection('produtos').doc(productId).update(data);
 }
@@ -175,28 +195,29 @@ document.getElementById('edit-product-form').onsubmit = async function(e) {
   const id = document.getElementById('edit-id').value;
   const nome = document.getElementById('edit-name').value;
   const descricao = document.getElementById('edit-description').value;
-  const categorias = document.getElementById('edit-categories').value.split(',').map(c => c.trim());
+  const categoriaId = document.getElementById('edit-category').value; // Salva o ID da categoria
   const preco = parseFloat(document.getElementById('edit-price').value);
   const estoque = parseInt(document.getElementById('edit-stock').value, 10);
   const imagens = document.getElementById('edit-images').value.split(',').map(i => i.trim());
   
-  await updateProductInFirestore(id, { nome, descricao, categorias, preco, imagens, estoque });
+  await updateProductInFirestore(id, { nome, descricao, categoriaId, preco, imagens, estoque });
   
   closeEditModal();
   await displayProducts();
 };
 
+// Cadastro de novos produtos
 document.getElementById('product-form').addEventListener('submit', async function(event) {
     event.preventDefault(); 
     
     const nome = document.getElementById('name').value;
     const descricao = document.getElementById('description').value;
-    const categorias = document.getElementById('categories').value.split(',').map(cat => cat.trim());
+    const categoriaId = document.getElementById('category').value; // Pega o ID da categoria
     const preco = parseFloat(document.getElementById('price').value);
     const estoque = parseInt(document.getElementById('stock').value, 10);
     const imagens = document.getElementById('images').value.split(',').map(img => img.trim());
 
-    const newProduct = { nome, descricao, categorias, preco, imagens, estoque };
+    const newProduct = { nome, descricao, categoriaId, preco, imagens, estoque };
 
     await addProduct(newProduct);
 
@@ -211,8 +232,9 @@ document.getElementById('product-form').addEventListener('submit', async functio
     await displayProducts();
 });
 
-// Exibe os produtos na tabela e cria os controles assim que a página é carregada
+// Exibe os produtos e popula os formulários quando a página é carregada
 window.addEventListener('load', async () => {
+    await populateCategoryDropdown('category');
     await criarControlesDeFiltro();
     await displayProducts();
 });
