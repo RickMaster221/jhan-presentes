@@ -98,3 +98,35 @@ window.addEventListener('load', () => {
         btnLogout.addEventListener('click', handleLogout);
     }
 });
+
+// Adicione este código no final de js/firebase-auth.js
+
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('login-form');
+
+    if (loginForm) {
+        loginForm.addEventListener('submit', function(event) {
+            // 1. Impede que o formulário recarregue a página
+            event.preventDefault(); 
+
+            // 2. Pega os dados dos campos
+            const email = loginForm.email.value;
+            const senha = loginForm.senha.value;
+            const feedback = document.getElementById('feedback-message');
+
+            // 3. Tenta fazer o login com o Firebase
+            firebase.auth().signInWithEmailAndPassword(email, senha)
+                .then((userCredential) => {
+                    // Login bem-sucedido! O onAuthStateChanged cuidará do redirecionamento.
+                    feedback.textContent = 'Login realizado com sucesso! Redirecionando...';
+                    feedback.style.color = 'green';
+                })
+                .catch((error) => {
+                    // Falha no login
+                    console.error("Erro de login:", error);
+                    feedback.textContent = 'Falha no login: ' + error.message;
+                    feedback.style.color = 'red';
+                });
+        });
+    }
+});
