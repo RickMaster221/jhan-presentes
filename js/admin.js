@@ -1,4 +1,4 @@
-// js/admin.js (Versão Final para Múltiplas Categorias)
+// js/admin.js (Versão Final com Múltiplas Categorias e TODOS os Filtros)
 
 /**
  * Popula um container com checkboxes para todas as categorias.
@@ -35,31 +35,110 @@ async function populateCategoryCheckboxes(containerId, selectedCategoryIds = [])
     });
 }
 
+/**
+ * Cria dinamicamente os campos de filtro e ordenação e os insere na página.
+ */
+async function criarControlesDeFiltro() {
+    const container = document.querySelector('.admin-container');
+    const tableContainer = document.querySelector('.admin-table-container');
+    if (document.getElementById('filtros-container')) return;
+
+    const controlesDiv = document.createElement('div');
+    controlesDiv.id = 'filtros-container';
+    controlesDiv.style.padding = '20px';
+    controlesDiv.style.border = '1px solid #eee';
+    controlesDiv.style.borderRadius = '8px';
+    controlesDiv.style.marginBottom = '20px';
+    controlesDiv.style.display = 'flex';
+    controlesDiv.style.flexWrap = 'wrap';
+    controlesDiv.style.gap = '15px';
+    controlesDiv.style.alignItems = 'flex-end';
+
+    const categorias = await getCategories();
+    let categoriasOptions = '<option value="">Todas as Categorias</option>';
+    categorias.forEach(cat => {
+        categoriasOptions += `<option value="${cat.id}">${cat.nome}</option>`;
+    });
+
+    controlesDiv.innerHTML = `
+        <div style="flex:2; min-width:250px;">
+            <label for="filtro-nome" style="display:block; margin-bottom:5px; font-weight:bold;">Pesquisar por Nome:</label>
+            <input type="text" id="filtro-nome" placeholder="Digite o nome do produto..." style="width:100%; padding:8px; box-sizing: border-box;">
+        </div>
+        <div style="flex:1; min-width:200px;">
+            <label for="filtro-categoria" style="display:block; margin-bottom:5px; font-weight:bold;">Filtrar por Categoria:</label>
+            <select id="filtro-categoria" style="width:100%; padding:8px;">${categoriasOptions}</select>
+        </div>
+        <div style="flex:1; min-width:200px;">
+            <label for="ordenar-por" style="display:block; margin-bottom:5px; font-weight:bold;">Ordenar por:</label>
+            <select id="ordenar-por" style="width:100%; padding:8px;">
+                <option value="nome-asc">Nome (A-Z)</option>
+                <option value="nome-desc">Nome (Z-A)</option>
+                <option value="preco-asc">Preço (Menor para Maior)</option>
+                <option value="preco-desc">Preço (Maior para Menor)</option>
+                <option value="estoque-asc">Estoque (Menor para Maior)</option>
+                <option value="estoque-desc">Estoque (Maior para Menor)</option>
+            </select>
+        </div>
+    `;
+
+    container.insertBefore(controlesDiv, tableContainer);
+
+    document.getElementById('filtro-nome').addEventListener('input', () => displayProducts());
+    document.getElementById('filtro-categoria').addEventListener('change', () => displayProducts());
+    document.getElementById('ordenar-por').addEventListener('change', () => displayProducts());
+}
+
 
 /**
- * Exibe os produtos na tabela.
+ * Exibe os produtos na tabela, aplicando filtros e ordenação
  */
 async function displayProducts() {
-    const products = await getProducts();
+    let products = await getProducts();
     const categories = await getCategories();
     const categoryMap = new Map(categories.map(cat => [cat.id, cat.nome]));
     const tableBody = document.getElementById('product-list-body');
     if (!tableBody) return;
 
+    const filtroNome = document.getElementById('filtro-nome')?.value.toLowerCase() || '';
+    const filtroCategoriaId = document.getElementById('filtro-categoria')?.value || '';
+    const ordenarPor = document.getElementById('ordenar-por')?.value || 'nome-asc';
+
+    // 1. Filtro por nome
+    if (filtroNome) {
+        products = products.filter(p => p.nome && p.nome.toLowerCase().includes(filtroNome));
+    }
+
+    // 2. Filtro por categoria (agora com múltiplas)
+    if (filtroCategoriaId) {
+        products = products.filter(p => p.categoriaIds && p.categoriaIds.includes(filtroCategoriaId));
+    }
+
+    // 3. Ordenação
+    products.sort((a, b) => {
+        switch (ordenarPor) {
+            case 'nome-desc': return b.nome.localeCompare(a.nome);
+            case 'preco-asc': return (a.preco || 0) - (b.preco || 0);
+            case 'preco-desc': return (b.preco || 0) - (a.preco || 0);
+            case 'estoque-asc': return (a.estoque || 0) - (b.estoque || 0);
+            case 'estoque-desc': return (b.estoque || 0) - (a.estoque || 0);
+            case 'nome-asc':
+            default:
+                return a.nome.localeCompare(b.nome);
+        }
+    });
+
     tableBody.innerHTML = '';
     products.forEach(product => {
         const row = tableBody.insertRow();
         let categoryNames = 'Sem Categoria';
-        
-        // Verifica se o produto tem o campo 'categoriaIds' e se é um array
-        if (product.categoriaIds && Array.isArray(product.categoriaIds)) {
+        if (product.categoriaIds && Array.isArray(product.categoriaIds) && product.categoriaIds.length > 0) {
             categoryNames = product.categoriaIds
-                .map(id => categoryMap.get(id) || 'Desconhecida')
+                .map(id => categoryMap.get(id) || '')
+                .filter(name => name) // Remove nomes vazios se a categoria foi deletada
                 .join(', ');
-        } else if (product.categoriaId) { // Fallback para o sistema antigo
-            categoryNames = categoryMap.get(product.categoriaId) || 'Sem Categoria';
         }
-
+        
         row.innerHTML = `
             <td><img src="${(product.imagens && product.imagens.length > 0) ? product.imagens[0] : 'https://via.placeholder.com/60'}" alt="Imagem" width="60"></td>
             <td>${product.nome || '-'}</td>
@@ -74,10 +153,7 @@ async function displayProducts() {
     });
 }
 
-/**
- * Abre o modal de edição para um produto.
- * @param {string} productId - O ID do produto a ser editado.
- */
+
 window.editProduct = async function(productId) {
     const products = await getProducts();
     const product = products.find(p => p.id === productId);
@@ -90,16 +166,11 @@ window.editProduct = async function(productId) {
     document.getElementById('edit-stock').value = product.estoque !== undefined ? product.estoque : ''; 
     document.getElementById('edit-images').value = (product.imagens && product.imagens.length > 0) ? product.imagens.join(', ') : '';
     
-    // Popula os checkboxes e marca os que já estão associados ao produto
     await populateCategoryCheckboxes('edit-category-list', product.categoriaIds || []);
     
     document.getElementById('edit-modal').style.display = 'flex';
 }
 
-/**
- * Deleta um produto.
- * @param {string} productId - O ID do produto a ser deletado.
- */
 window.removeProduct = async function(productId) {
     if (confirm('Tem certeza que deseja excluir este produto?')) {
         await deleteProduct(productId);
@@ -107,10 +178,7 @@ window.removeProduct = async function(productId) {
     }
 }
 
-// --- Funções que rodam quando a página carrega ---
 document.addEventListener('DOMContentLoaded', () => {
-
-    // Cria o HTML do Modal de Edição dinamicamente (para evitar repetição)
     const modalHtml = `
     <div id="edit-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); z-index:9999; justify-content:center; align-items:center;">
       <div style="background:#fff; padding:30px; border-radius:8px; min-width:400px; max-width:90vw; position:relative;">
@@ -132,7 +200,6 @@ document.addEventListener('DOMContentLoaded', () => {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-    // Adiciona os listeners aos formulários e botões
     const productForm = document.getElementById('product-form');
     if (productForm) {
         productForm.addEventListener('submit', async (event) => {
@@ -142,7 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const newProduct = {
                 nome: document.getElementById('name').value,
                 descricao: document.getElementById('description').value,
-                categoriaIds: selectedCategories, // Salva o array de IDs
+                categoriaIds: selectedCategories,
                 preco: parseFloat(document.getElementById('price').value),
                 estoque: parseInt(document.getElementById('stock').value, 10),
                 imagens: document.getElementById('images').value.split(',').map(i => i.trim())
@@ -150,7 +217,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             await addProduct(newProduct);
             productForm.reset();
-            await populateCategoryCheckboxes('category-checkbox-list'); // Recarrega checkboxes limpos
+            await populateCategoryCheckboxes('category-checkbox-list');
             
             const feedback = document.getElementById('feedback-message');
             feedback.textContent = 'Produto cadastrado com sucesso!';
@@ -192,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Carrega tudo ao iniciar a página
+    criarControlesDeFiltro();
     populateCategoryCheckboxes('category-checkbox-list');
     displayProducts();
 });
