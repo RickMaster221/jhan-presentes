@@ -53,11 +53,11 @@ function validateSignature(request, secret) {
 module.exports = async (request, response) => {
     try {
         // 1. Valida a assinatura para garantir que a requisição é do Mercado Pago
-        const secret = process.env.MP_WEBHOOK_SECRET;
+        const secret = process.env.MERCADOPAGO_WEBHOOK_SECRET;
         if (secret) {
             validateSignature(request, secret);
         } else {
-            console.warn("⚠️ A variável de ambiente MP_WEBHOOK_SECRET não está configurada. A validação foi ignorada.");
+            console.warn("⚠️ A variável de ambiente MERCADOPAGO_WEBHOOK_SECRET não está configurada. A validação foi ignorada.");
         }
 
         // 2. Continua com a sua lógica de processamento
