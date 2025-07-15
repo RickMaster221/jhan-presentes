@@ -1,4 +1,4 @@
-// js/migracao.js
+// js/migracao.js (Versão Corrigida e Robusta)
 
 document.getElementById('start-migration').addEventListener('click', async () => {
     const logDiv = document.getElementById('log');
@@ -8,47 +8,50 @@ document.getElementById('start-migration').addEventListener('click', async () =>
     logDiv.innerHTML = 'Iniciando migração...<br>';
 
     try {
-        // 1. Buscar todas as categorias e criar um mapa de "nome" para "ID"
         logDiv.innerHTML += 'Buscando categorias cadastradas...<br>';
         const categories = await getCategories();
-        const categoryMap = new Map(categories.map(cat => [cat.nome.toLowerCase(), cat.id]));
-        logDiv.innerHTML += `${categories.length} categorias encontradas.<br><br>`;
+        // Mapa de NOME da categoria (em minúsculas) para o ID dela
+        const categoryMap = new Map(categories.map(cat => [cat.nome.toLowerCase().trim(), cat.id]));
+        logDiv.innerHTML += `${categories.length} categorias encontradas no sistema.<br><br>`;
 
-        // 2. Buscar todos os produtos
         logDiv.innerHTML += 'Buscando todos os produtos...<br>';
         const products = await getProducts();
         logDiv.innerHTML += `${products.length} produtos encontrados.<br><br>`;
 
         let produtosAtualizados = 0;
 
-        // 3. Iterar sobre cada produto para verificar se precisa de migração
         for (const product of products) {
-            // Verifica se o produto NÃO tem o novo campo 'categoriaId'
-            // E se ele TEM o campo antigo 'categorias' (que é um array de strings)
-            if (!product.categoriaId && product.categorias && Array.isArray(product.categorias) && product.categorias.length > 0) {
+            // A condição para migrar: o produto TEM o campo antigo 'categorias' e NÃO TEM o novo 'categoriaIds'
+            if (product.categorias && !product.categoriaIds) {
+                logDiv.innerHTML += `Analisando produto: "${product.nome}"...<br>`;
                 
-                const nomeCategoriaAntiga = product.categorias[0]; // Pega o primeiro nome de categoria do array antigo
-                const idCategoriaNova = categoryMap.get(nomeCategoriaAntiga.toLowerCase());
+                const nomesCategoriasAntigas = product.categorias;
+                const novosIdsDeCategoria = [];
 
-                if (idCategoriaNova) {
-                    // Encontrou uma correspondência! Vamos atualizar o produto.
-                    logDiv.innerHTML += `Migrando produto: "${product.nome}"...<br>`;
-                    
+                nomesCategoriasAntigas.forEach(nomeCat => {
+                    const idEncontrado = categoryMap.get(nomeCat.toLowerCase().trim());
+                    if (idEncontrado) {
+                        novosIdsDeCategoria.push(idEncontrado);
+                    } else {
+                        logDiv.innerHTML += `<span style="color: orange;"> -> Atenção: A categoria "${nomeCat}" não foi encontrada no sistema.</span><br>`;
+                    }
+                });
+
+                if (novosIdsDeCategoria.length > 0) {
                     const productRef = db.collection('produtos').doc(product.id);
                     await productRef.update({
-                        categoriaId: idCategoriaNova // Adiciona o novo campo
+                        categoriaIds: novosIdsDeCategoria // Adiciona o novo campo com a LISTA de IDs
                     });
-
-                    logDiv.innerHTML += `<span style="color: green;"> -> Sucesso! Categoria "${nomeCategoriaAntiga}" associada.</span><br>`;
+                    logDiv.innerHTML += `<span style="color: green;"> -> Sucesso! Produto migrado para o novo sistema de categorias.</span><br>`;
                     produtosAtualizados++;
                 } else {
-                    logDiv.innerHTML += `<span style="color: orange;"> -> Atenção: Produto "${product.nome}" tem a categoria "${nomeCategoriaAntiga}", que não foi encontrada no novo sistema. Pulei.</span><br>`;
+                     logDiv.innerHTML += ` -> Nenhuma categoria correspondente encontrada para este produto.<br>`;
                 }
             }
         }
 
         logDiv.innerHTML += `<br><hr><strong>Migração Concluída!</strong><br>`;
-        logDiv.innerHTML += `<strong style="color: green;">${produtosAtualizados} produtos foram atualizados com sucesso.</strong><br>`;
+        logDiv.innerHTML += `<strong style="color: green;">${produtosAtualizados} produtos foram atualizados.</strong><br>`;
 
     } catch (error) {
         console.error("Erro durante a migração:", error);

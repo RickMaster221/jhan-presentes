@@ -1,9 +1,7 @@
-// js/admin.js (Versão Final com Múltiplas Categorias e TODOS os Filtros)
+// js/admin.js (Versão Final com Múltiplas Categorias e TODOS os Filtros Restaurados)
 
 /**
  * Popula um container com checkboxes para todas as categorias.
- * @param {string} containerId - O ID do elemento div que conterá os checkboxes.
- * @param {string[]} [selectedCategoryIds=[]] - Um array com os IDs das categorias que devem vir pré-selecionadas.
  */
 async function populateCategoryCheckboxes(containerId, selectedCategoryIds = []) {
     const container = document.getElementById(containerId);
@@ -17,18 +15,16 @@ async function populateCategoryCheckboxes(containerId, selectedCategoryIds = [])
         return;
     }
     
-    container.innerHTML = ''; // Limpa antes de adicionar
+    container.innerHTML = '';
     categories.forEach(cat => {
         const label = document.createElement('label');
         const checkbox = document.createElement('input');
         checkbox.type = 'checkbox';
         checkbox.name = 'product_categories';
         checkbox.value = cat.id;
-
         if (selectedCategoryIds.includes(cat.id)) {
             checkbox.checked = true;
         }
-
         label.appendChild(checkbox);
         label.appendChild(document.createTextNode(` ${cat.nome}`));
         container.appendChild(label);
@@ -45,14 +41,10 @@ async function criarControlesDeFiltro() {
 
     const controlesDiv = document.createElement('div');
     controlesDiv.id = 'filtros-container';
-    controlesDiv.style.padding = '20px';
-    controlesDiv.style.border = '1px solid #eee';
-    controlesDiv.style.borderRadius = '8px';
-    controlesDiv.style.marginBottom = '20px';
-    controlesDiv.style.display = 'flex';
-    controlesDiv.style.flexWrap = 'wrap';
-    controlesDiv.style.gap = '15px';
-    controlesDiv.style.alignItems = 'flex-end';
+    controlesDiv.style.cssText = `
+        padding: 20px; border: 1px solid #eee; border-radius: 8px; 
+        margin-bottom: 20px; display: flex; flex-wrap: wrap; 
+        gap: 15px; align-items: flex-end;`;
 
     const categorias = await getCategories();
     let categoriasOptions = '<option value="">Todas as Categorias</option>';
@@ -84,9 +76,9 @@ async function criarControlesDeFiltro() {
 
     container.insertBefore(controlesDiv, tableContainer);
 
-    document.getElementById('filtro-nome').addEventListener('input', () => displayProducts());
-    document.getElementById('filtro-categoria').addEventListener('change', () => displayProducts());
-    document.getElementById('ordenar-por').addEventListener('change', () => displayProducts());
+    document.getElementById('filtro-nome').addEventListener('input', displayProducts);
+    document.getElementById('filtro-categoria').addEventListener('change', displayProducts);
+    document.getElementById('ordenar-por').addEventListener('change', displayProducts);
 }
 
 
@@ -104,17 +96,14 @@ async function displayProducts() {
     const filtroCategoriaId = document.getElementById('filtro-categoria')?.value || '';
     const ordenarPor = document.getElementById('ordenar-por')?.value || 'nome-asc';
 
-    // 1. Filtro por nome
     if (filtroNome) {
         products = products.filter(p => p.nome && p.nome.toLowerCase().includes(filtroNome));
     }
 
-    // 2. Filtro por categoria (agora com múltiplas)
     if (filtroCategoriaId) {
         products = products.filter(p => p.categoriaIds && p.categoriaIds.includes(filtroCategoriaId));
     }
 
-    // 3. Ordenação
     products.sort((a, b) => {
         switch (ordenarPor) {
             case 'nome-desc': return b.nome.localeCompare(a.nome);
@@ -122,9 +111,7 @@ async function displayProducts() {
             case 'preco-desc': return (b.preco || 0) - (a.preco || 0);
             case 'estoque-asc': return (a.estoque || 0) - (b.estoque || 0);
             case 'estoque-desc': return (b.estoque || 0) - (a.estoque || 0);
-            case 'nome-asc':
-            default:
-                return a.nome.localeCompare(b.nome);
+            default: return a.nome.localeCompare(b.nome);
         }
     });
 
@@ -133,10 +120,7 @@ async function displayProducts() {
         const row = tableBody.insertRow();
         let categoryNames = 'Sem Categoria';
         if (product.categoriaIds && Array.isArray(product.categoriaIds) && product.categoriaIds.length > 0) {
-            categoryNames = product.categoriaIds
-                .map(id => categoryMap.get(id) || '')
-                .filter(name => name) // Remove nomes vazios se a categoria foi deletada
-                .join(', ');
+            categoryNames = product.categoriaIds.map(id => categoryMap.get(id) || '').filter(Boolean).join(', ');
         }
         
         row.innerHTML = `
@@ -153,7 +137,7 @@ async function displayProducts() {
     });
 }
 
-
+// O restante do seu código (modal de edição, cadastro, etc.)
 window.editProduct = async function(productId) {
     const products = await getProducts();
     const product = products.find(p => p.id === productId);
@@ -167,7 +151,6 @@ window.editProduct = async function(productId) {
     document.getElementById('edit-images').value = (product.imagens && product.imagens.length > 0) ? product.imagens.join(', ') : '';
     
     await populateCategoryCheckboxes('edit-category-list', product.categoriaIds || []);
-    
     document.getElementById('edit-modal').style.display = 'flex';
 }
 
@@ -239,7 +222,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 nome: document.getElementById('edit-name').value,
                 descricao: document.getElementById('edit-description').value,
                 categoriaIds: selectedCategories,
-                preco: parseFloat(document.getElementById('edit-price').value),
+                preco: parseFloat(document.getElementById('price').value),
                 estoque: parseInt(document.getElementById('edit-stock').value, 10),
                 imagens: document.getElementById('edit-images').value.split(',').map(i => i.trim())
             };
