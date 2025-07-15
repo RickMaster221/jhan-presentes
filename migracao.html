@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Migração de Categorias</title>
+    <link rel="stylesheet" href="css/style.css">
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script>
+      var firebaseConfig = {
+        apiKey: "AIzaSyAZ2yG95fgUzcQdjgKXxr7dYG1xtPxnZhA",
+        authDomain: "jhan-presentes.firebaseapp.com",
+        projectId: "jhan-presentes"
+      };
+      if (!firebase.apps.length) {
+        firebase.initializeApp(firebaseConfig);
+      }
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+</head>
+<body class="login-body">
+    <div class="admin-container">
+        <h1>Migração de Categorias de Produtos</h1>
+        <p>Este script irá atualizar produtos antigos para o novo sistema de categorias.</p>
+        <button id="start-migration" class="btn-submit">Iniciar Migração</button>
+        <hr>
+        <h2>Log da Migração:</h2>
+        <div id="log" style="background: #f4f4f4; padding: 15px; border-radius: 5px; height: 400px; overflow-y: auto; font-family: monospace;">
+            Aguardando início...
+        </div>
+    </div>
+
+    <script src="js/database.js"></script>
+    <script src="js/migracao.js"></script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Gerador de Token Mercado Livre</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f4; }
+        .container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border-radius: 4px; border: 1px solid #ccc; }
+        button { background-color: #3483fa; color: white; font-weight: bold; cursor: pointer; border: none; }
+        pre { background-color: #eee; padding: 15px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+        h2, h3 { color: #333; }
+        a { color: #3483fa; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Gerador de Token - Mercado Livre</h2>
+        <h3>Passo 1: Gere um novo código de autorização</h3>
+        <p>Clique no link abaixo, autorize a aplicação e copie o código <strong>TG-...</strong> da barra de endereços.</p>
+        <p><a href="https://auth.mercadolivre.com.br/authorization?response_type=code&client_id=61378233694878&redirect_uri=https://google.com" target="_blank">Gerar Novo Código de Autorização</a></p>
+
+        <h3>Passo 2: Cole o código e gere os tokens</h3>
+        <p>Cole o código <strong>TG-...</strong> que você acabou de copiar e clique no botão.</p>
+        <input type="text" id="authCode" placeholder="Cole o código TG-... aqui">
+        <button onclick="getTokens()">Gerar Tokens</button>
+
+        <h3>Passo 3: Resultado</h3>
+        <pre id="result">Seus novos tokens aparecerão aqui...</pre>
+    </div>
+
+    <script>
+        async function getTokens() {
+            const authCode = document.getElementById('authCode').value;
+            const resultElement = document.getElementById('result');
+
+            if (!authCode.startsWith('TG-')) {
+                resultElement.textContent = 'Erro: O código inserido não parece válido. Ele deve começar com "TG-".';
+                return;
+            }
+
+            const clientId = '61378233694878';
+            const clientSecret = 'B4j27UWTGZg2ELHlGMPmjcMMKDJK8Txo';
+            const redirectUri = 'https://google.com';
+
+            const body = new URLSearchParams();
+            body.append('grant_type', 'authorization_code');
+            body.append('client_id', clientId);
+            body.append('client_secret', clientSecret);
+            body.append('code', authCode);
+            body.append('redirect_uri', redirectUri);
+
+            resultElement.textContent = 'Gerando tokens...';
+
+            try {
+                const response = await fetch('https://api.mercadolivre.com/oauth/token', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(JSON.stringify(data));
+                }
+                
+                resultElement.textContent = `SUCESSO! Atualize seu arquivo .env com estes valores:\n\n` +
+                                            `ML_ACCESS_TOKEN="${data.access_token}"\n\n` +
+                                            `ML_REFRESH_TOKEN="${data.refresh_token}"`;
+
+            } catch (error) {
+                resultElement.textContent = 'ERRO AO GERAR TOKENS:\n\n' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
