@@ -1,19 +1,15 @@
-// /api/criar-pagamento.js (Corrigido para o SDK v2 do Mercado Pago)
+// /api/criar-pagamento.js (Versão Final com Qualidade de Integração)
 
-// 1. Importa os componentes necessários do SDK
 const { MercadoPagoConfig, Preference } = require('mercadopago');
 
-// 2. Inicializa o cliente com seu Access Token
 const client = new MercadoPagoConfig({ 
     accessToken: process.env.MP_ACCESS_TOKEN 
 });
 
-// A função serverless que vai receber os dados do carrinho
 module.exports = async (request, response) => {
-    // Permite que seu site faça requisições para esta função (CORS)
     response.setHeader('Access-Control-Allow-Origin', '*');
     response.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    response.setHeader('Access-control-Allow-Headers', 'Content-Type');
 
     if (request.method === 'OPTIONS') {
         return response.status(200).end();
@@ -30,30 +26,34 @@ module.exports = async (request, response) => {
             return response.status(400).json({ error: 'O carrinho está vazio.' });
         }
 
-        // Formata os itens para a API do Mercado Pago
         const items_preference = cartItems.map(item => ({
-            id: item.id, // Opcional, mas bom para referência
+            id: item.id,
             title: item.nome,
             unit_price: item.preco,
             quantity: item.quantidade,
             currency_id: 'BRL'
         }));
 
+        // Cria um código único para esta transação específica
+        const externalReference = `JHAN_PRESENTES_${Date.now()}`;
+
         const preferenceBody = {
             items: items_preference,
             back_urls: {
+                // URLs corrigidas para o seu domínio principal
                 success: 'https://jhan-presentes.vercel.app/pagamento_concluido.html',
                 failure: 'https://jhan-presentes.vercel.app/pagamento_falhou.html',
                 pending: 'https://jhan-presentes.vercel.app/pagamento_pendente.html'
             },
             auto_return: 'approved',
+            // --- CAMPOS ADICIONADOS PARA A QUALIDADE DA INTEGRAÇÃO ---
+            notification_url: 'https://jhan-presentes.vercel.app/api/webhook-mercadopago',
+            external_reference: externalReference
         };
         
-        // 3. Cria o objeto de Preferência usando o cliente
         const preference = new Preference(client);
         const result = await preference.create({ body: preferenceBody });
         
-        // 4. Retorna o ID da preferência para o front-end
         response.status(201).json({ preference_id: result.id });
 
     } catch (error) {
