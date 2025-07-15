@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin - Jhan Presentes</title>
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Estilo para a lista de checkboxes de categoria */
+        .category-checkbox-list {
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .category-checkbox-list label {
+            display: block;
+            margin-bottom: 5px;
+        }
+    </style>
 
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
     <script>
@@ -35,10 +49,10 @@
                 <textarea id="description" name="description" required></textarea>
             </div>
             <div class="form-row">
-                <label for="category">Categoria:</label>
-                <select id="category" name="category" required>
-                    <option value="">Carregando...</option>
-                </select>
+                <label>Categorias:</label>
+                <div id="category-checkbox-list" class="category-checkbox-list">
+                    <p>Carregando...</p>
+                </div>
             </div>
             <div class="form-row">
                 <label for="price">Preço (R$):</label>
@@ -66,7 +80,7 @@
                     <tr>
                         <th>Imagem</th>
                         <th>Nome</th>
-                        <th>Categoria</th>
+                        <th>Categorias</th>
                         <th>Preço</th>
                         <th>Estoque</th>
                         <th>Ações</th>
@@ -81,10 +95,10 @@
     <script src="js/database.js"></script>
     <script src="js/admin.js"></script>
     <script>
-        const ADMIN_EMAIL = "ricardopiresdecarvalhojunior@gmail.com"; // Defina o email do admin
+        const ADMIN_EMAIL = "ricardopiresdecarvalhojunior@gmail.com";
         firebase.auth().onAuthStateChanged(user => {
             if (!user || user.email !== ADMIN_EMAIL) {
-                // alert("Acesso negado. Você precisa ser um administrador para ver esta página.");
+                // alert("Acesso negado.");
                 // window.location.href = 'index.html';
             }
         });
